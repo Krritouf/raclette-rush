@@ -36,12 +36,15 @@ export class Terrain {
   potatoes: Potato[] = [];
   powerups: PowerUp[] = [];
   deco: Deco[] = [];
+  /** Where the ground throws the wheel in the air: the lip of each kicker and the edge of each cliff. */
+  launches: number[] = [];
 
   private genX = 0;
   private slope = 0.3;
   private target = 0.3;
   private feat: Feature = 'normal';
   private featLeft = 30;
+  private lastLaunch = -1e9;
   private nextObsX: number;
   private nextPotX: number;
   private nextPowX: number;
@@ -78,7 +81,9 @@ export class Terrain {
       if (this.featLeft <= 0) {
         const f = T.terrain.features;
         const p = r();
+        const landing = d - this.lastLaunch < sp.landingZone;
         if (calm) { this.feat = 'normal'; this.featLeft = 10; if (this.tutorial) this.target = 0.28; }
+        else if (landing) { this.feat = 'normal'; this.featLeft = 6; }
         else if (p < f.normal) { this.feat = 'normal'; this.featLeft = Math.floor(range(r, 12, 35)); this.target = range(r, 0.22, 0.5 + 0.25 * diff); }
         else if (p < f.normal + f.kicker && this.feat !== 'flat') { this.feat = 'kicker'; this.featLeft = Math.floor(range(r, 4, 7)); }
         else if (p < f.normal + f.kicker + f.cliff) { this.feat = 'cliff'; this.featLeft = 1; }
@@ -93,14 +98,16 @@ export class Terrain {
       this.gy.push(y);
       this.genX += step;
       const nx = this.genX;
+      if ((this.feat === 'kicker' && this.featLeft === 0) || this.feat === 'cliff') { this.launches.push(nx); this.lastLaunch = nx; }
 
       // the tutorial's obstacles, placed by hand
       while (this.scripted.length && nx >= this.scripted[0].x) {
         const s = this.scripted.shift()!;
         this.obstacles.push({ x: s.x, t: s.t, hit: false, passed: false, rot: 0 });
       }
-      // obstacles: only on a steady slope, never on a kicker or a cliff edge
-      if (nx > this.nextObsX && (this.feat === 'normal' || this.feat === 'flat') && this.featLeft > 3) {
+      // obstacles: only on a steady slope, never on a kicker or a cliff edge, and never where a wheel
+      // thrown by the last kicker or cliff may still be in the air (it could not jump)
+      if (nx > this.nextObsX && (this.feat === 'normal' || this.feat === 'flat') && this.featLeft > 3 && nx - this.lastLaunch >= sp.landingZone) {
         const pool = sp.pools.find(p => nx < p.until) ?? sp.pools[sp.pools.length - 1];
         const t = pick(r, pool.types) as ObstacleType;
         this.obstacles.push({ x: nx, t, hit: false, passed: false, rot: 0 });

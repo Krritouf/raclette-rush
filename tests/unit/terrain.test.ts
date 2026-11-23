@@ -55,4 +55,20 @@ describe('Terrain', () => {
       expect(firstCow?.x ?? Infinity).toBeGreaterThanOrEqual(TUNE.spawn.pools[1].until);
     }
   });
+
+  it('leaves the landing zone after a kicker or a cliff free of obstacles', () => {
+    // a wheel thrown in the air cannot jump: an obstacle where it lands is a hit it cannot avoid
+    for (const seed of [1, 2, 3, 4, 5]) {
+      const t = build(seed);
+      expect(t.launches.length).toBeGreaterThan(5);
+      const inZone = t.obstacles.filter(o => t.launches.some(l => o.x > l && o.x - l < TUNE.spawn.landingZone));
+      expect(inZone).toEqual([]);
+    }
+  });
+
+  it('never throws the wheel again before it has landed', () => {
+    const t = build(8);
+    const gaps = t.launches.slice(1).map((x, i) => x - t.launches[i]);
+    expect(Math.min(...gaps)).toBeGreaterThanOrEqual(TUNE.spawn.landingZone);
+  });
 });

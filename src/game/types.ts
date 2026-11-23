@@ -37,6 +37,8 @@ export interface Tune {
     firstPotato: number; potatoGapMin: number; potatoGapMax: number; potatoSpacing: number;
     potatoRowMin: number; potatoRowMax: number; potatoHighChance: number;
     firstPower: number; powerGapMin: number; powerGapMax: number;
+    /** After a kicker or a cliff: a calm slope this long, with no obstacle and no other launch. */
+    landingZone: number;
   };
   powers: {
     magnetTime: number; magnetRadius: number; turboTime: number; turboSpeed: number; healFullBonus: number;

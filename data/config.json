@@ -60,7 +60,8 @@
     "potatoHighChance": 0.4,
     "firstPower": 2500,
     "powerGapMin": 1800,
-    "powerGapMax": 3500
+    "powerGapMax": 3500,
+    "landingZone": 700
   },
   "powers": {
     "magnetTime": 8,

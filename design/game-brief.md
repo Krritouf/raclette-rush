@@ -58,14 +58,16 @@ Every value is in `data/config.json`.
 
 ## Balance — first numbers
 
-From `npm run sim` (a bot, 40 runs per level): about **850 m and 26 potatoes a run**.
-Shop prices (150 / 400 / 700 / 1200) therefore mean about 5, 15, 25 and 45 runs,
-mission rewards included. These numbers are a starting point to check in playtests.
+**Landing zones (decided 2026-11-23).** A wheel thrown by a kicker or a cliff flies for up
+to 2.6 s and cannot jump, so an obstacle where it lands was a hit nobody could avoid:
+23–27 % of the bot's hits. After every kicker or cliff the terrain now makes a calm
+slope of `spawn.landingZone` units (700: about 9 landings in 10 at full speed) with no
+obstacle and no new launch. Unavoidable hits fell to 4–8 %.
 
-**Open issue:** with no obstacles at all, the wheel is in the air 44 % of the time (kickers
-and cliffs send it flying for up to 2.6 s) and cannot jump while airborne, so some hits
-cannot be avoided. This comes from the prototype and is a design decision to make (see the
-step 3 summary).
+From `npm run sim` (a bot, 40 runs per level), with the landing zones: about
+**1,700 m and 48 potatoes a run**. Shop prices (150 / 400 / 700 / 1200) therefore mean
+about 3, 8, 15 and 25 runs, mission rewards aside. A bot is not a player: check these
+in playtests before raising the prices.
 
 ## Out of scope for now
 
