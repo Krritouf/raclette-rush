@@ -5,10 +5,11 @@
 
 import type { Run } from '../game/run';
 import {
-  INK, artChalet, artCloud, artCow, artFarFir, artFeast, artFence, artFinishArch, artFir, artFlower, artPotato, artPowerBubble, artPowerIcon,
+  INK, artChalet, artCloud, artCow, artFarFir, artFence, artFinishArch, artFir, artFlower, artPotato, artPowerBubble, artPowerIcon,
   artRangeTile, artRock, artSky, artWheel,
 } from './art';
 import type { Fx } from './fx';
+import { FEAST_HALF_WIDTH, friendsFeast } from './guests';
 
 type Ctx = CanvasRenderingContext2D;
 
@@ -47,7 +48,7 @@ export class Camera {
 
   private tx(run: Run, v: View): number {
     const vw = v.W / (v.S * this.zoom);
-    if (run.state === 'won') return (run.finishX + run.tableX) / 2 + 30 - vw / 2;
+    if (run.state === 'won') return (run.finishX - ARCH_HALF_WIDTH + run.tableX + FEAST_HALF_WIDTH) / 2 - vw / 2;
     return run.m.x - vw * (0.3 - Math.min(0.1, run.m.vx / 9000));
   }
   private ty(run: Run, v: View): number {
@@ -57,8 +58,8 @@ export class Camera {
   }
 }
 
-/** How close the camera comes for the feast, at most, and the width it keeps in view (the arch to the table's end). */
-const FEAST_ZOOM = 1.45, FEAST_WIDTH = 820;
+/** How close the camera comes for the feast, at most, and the width it keeps in view (the arch to the table's end, and a margin). */
+const FEAST_ZOOM = 1.45, ARCH_HALF_WIDTH = 80, FEAST_WIDTH = 860;
 
 /** A number in [0, 1) that is always the same for the same n: places the grass and flowers. */
 function hash(n: number): number {
@@ -208,7 +209,7 @@ export function drawWorld(ctx: Ctx, v: View, cam: Camera, run: Run, fx: Fx, time
       ctx.restore();
     }
     if (inView(run.tableX, 220)) {
-      ctx.save(); ctx.translate(run.tableX, T.groundAt(run.tableX)); artFeast(ctx, time, run.state === 'won'); ctx.restore();
+      ctx.save(); ctx.translate(run.tableX, T.groundAt(run.tableX)); friendsFeast(ctx, time, run.state === 'won'); ctx.restore();
     }
   }
   for (const o of T.obstacles) {

@@ -42,6 +42,7 @@ taking a slice. The player should laugh when they fail and want to go again righ
 - **Fair by proof.** `src/game/solver.ts` searches each level for a way through without a single hit (every jump moment and length, going back when stuck); a unit test fails if any level has a spot that cannot be cleared. Levels 3 and 10 had such a spot with their first seed and were given another.
 - **Stars.** One for reaching the feast, one for half the level's potatoes, one for losing no slice (a hit the pan blocks does not count). A replay never takes stars away.
 - **Losing.** The wheel breaks: the level starts again from the top.
+- **The guests.** Seven friends of the owner, drawn after a photo (`src/render/guests.ts`, sheet `design/art/convives-v2.png`), stand behind a table for seven. They are described by their looks in the code, never by name.
 - **The finish.** The slope eases off before the line and lies flat after it; nothing to dodge or pick up near the line. The camera frames the arch and the table and comes closer while the guests cheer (`finish.celebrate` seconds), then the end screen shows the stars.
 - **Shared with the Quick Game.** Potatoes and missions count in both; the record is the Quick Game's.
 - **Difficulty, from the bot** (`npm run sim`): an imperfect bot clears levels 1–7 every time and levels 8–10 5 % to 45 % of the time.

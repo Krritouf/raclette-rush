@@ -4,7 +4,8 @@ import { isUnlocked, recordStars, starParts, starsFor, totalStars } from '../../
 import { Run } from '../../src/game/run';
 import { solve } from '../../src/game/solver';
 import type { LevelDef } from '../../src/game/types';
-import { DT, TUNE, VALAIS, steps } from './fixtures';
+import { FEAST_HALF_WIDTH } from '../../src/render/guests';
+import { CHEESES, DT, TUNE, VALAIS, steps } from './fixtures';
 
 const LEVELS: LevelDef[] = levelsData;
 
@@ -105,6 +106,16 @@ describe('the finish', () => {
     expect(r.m.vx).toBeLessThan(1);
     expect(r.m.x).toBeLessThanOrEqual(r.tableX - TUNE.finish.stopBefore + 1);
     expect(r.m.x).toBeGreaterThan(r.tableX - TUNE.finish.stopBefore - 40);
+  });
+
+  it('stops the wheel clear of the table, whatever the cheese', () => {
+    for (const c of CHEESES) {
+      const r = new Run(TUNE, c, 0, false, LEVELS[0]);
+      r.launch(); r.terrain.obstacles.length = 0;
+      r.m.x = r.finishX - 200; r.m.y = r.terrain.groundAt(r.m.x) - r.m.r; r.m.vx = 900;
+      steps(r, 60 * 6);
+      expect(r.m.x + r.m.r, c.id).toBeLessThan(r.tableX - FEAST_HALF_WIDTH);
+    }
   });
 
   it('takes no more jumps once the line is crossed', () => {

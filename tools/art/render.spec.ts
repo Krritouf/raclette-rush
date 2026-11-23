@@ -10,9 +10,10 @@ test('renders the art sheet', async ({ page }) => {
   await page.goto(pathToFileURL(resolve('tools/art/dist/index.html')).href);
   await page.waitForFunction(() => (window as unknown as { artReady?: boolean }).artReady === true, null, { timeout: 20000 });
   const version = process.env.ART_VERSION ?? 'v1';
-  for (const id of ['sheet', 'scene']) {
+  const friends = process.env.FRIENDS_VERSION ?? 'v1';
+  for (const id of ['sheet', 'scene', 'friends']) {
     const data = await page.evaluate(i => (document.getElementById(i) as HTMLCanvasElement).toDataURL('image/png'), id);
-    const name = id === 'sheet' ? `planche-${version}.png` : `scene-${version}.png`;
+    const name = id === 'sheet' ? `planche-${version}.png` : id === 'scene' ? `scene-${version}.png` : `convives-${friends}.png`;
     writeFileSync(resolve('design/art', name), Buffer.from(data.split(',')[1], 'base64'));
   }
   if (errors.length) throw new Error(errors.join('\n'));

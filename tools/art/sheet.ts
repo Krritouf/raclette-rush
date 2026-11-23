@@ -6,11 +6,13 @@ import '@fontsource/fredoka/latin-600.css';
 import cheeses from '../../data/cheeses.json';
 import {
   DISPLAY, TEXT, artButton, artChalet, artCloud, artCow, artFarFir, artFence, artFir, artGearIcon, artLogo, artPauseIcon,
-  artPill, artPotato, artPowerBubble, artRange, artRock, artRoundButton, artSky, artSlope, artWheel, type ArtPower,
+  artFinishArch, artPill, artPotato, artPowerBubble, artRange, artRock, artRoundButton, artSky, artSlope, artWheel, type ArtPower,
 } from '../../src/render/art';
+import { FRIENDS, friend, friendsFeast } from '../../src/render/guests';
 
 type Ctx = CanvasRenderingContext2D;
 const VERSION = 'v1';
+const FRIENDS_VERSION = 'v2';
 const NAVY = '#2a3b52';
 
 function label(ctx: Ctx, s: string, x: number, y: number, size: number, font = DISPLAY, color = NAVY, align: CanvasTextAlign = 'center'): void {
@@ -168,10 +170,70 @@ function scene(cv: HTMLCanvasElement): void {
   ctx.restore();
 }
 
+/** The feast's guests after the photo of friends (proposal, tools/art/friends-art.ts). */
+function friendsSheet(cv: HTMLCanvasElement): void {
+  const W = 2400, H = 2290;
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d')!;
+  ctx.fillStyle = '#efe7d8'; ctx.fillRect(0, 0, W, H);
+  label(ctx, `Raclette Rush — les convives, proposition ${FRIENDS_VERSION}`, 70, 70, 60, DISPLAY, NAVY, 'left');
+  label(ctx, 'Sept personnages d’après la photo. Ils attendent la meule bras baissés, puis lèvent les bras en cadence ; trois font le V comme sur la photo.', 70, 122, 26, TEXT, '#6b7a8c', 'left');
+
+  const n = FRIENDS.length, colW = (W - 140) / n;
+  // arms down, waiting
+  let y = 170;
+  section(ctx, y, 700, 'En attendant la meule', 'Bras sur la table, ils regardent arriver le fromage.', W);
+  FRIENDS.forEach((f, i) => {
+    const x = 70 + colW * (i + 0.5);
+    at(ctx, x, y + 660, 3.6, () => {
+      ctx.fillStyle = '#e4dccb'; ctx.fillRect(-24, -40, 48, 6);
+      friend(ctx, f, 0, false);
+    });
+    label(ctx, f.label, x, y + 640, 24, TEXT, NAVY);
+  });
+  // cheering
+  y = 900;
+  section(ctx, y, 700, 'La fête', 'La meule est arrivée : bras levés, grands sourires.', W);
+  FRIENDS.forEach((f, i) => {
+    const x = 70 + colW * (i + 0.5);
+    at(ctx, x, y + 690, 3.6, () => friend(ctx, f, 1, true));
+  });
+  // the table at the end of a level
+  y = 1630;
+  section(ctx, y, 580, 'La tablée', 'Une table pour sept, l’appareil à raclette au milieu. À gauche en grand, à droite à la taille du jeu sur un téléphone.', W);
+  const px = 60, pyy = y + 120, pw = 1520, ph = 440;
+  ctx.save(); ctx.beginPath(); ctx.roundRect(px, pyy, pw, ph, 16); ctx.clip(); ctx.translate(px, pyy);
+  artSky(ctx, pw, ph, pw * 0.85, ph * 0.18);
+  artRange(ctx, pw, ph * 0.62, 200, '#8ea9c8', 0.42, 3);
+  artRange(ctx, pw, ph * 0.78, 110, '#5f8f5a', 0, 21);
+  const pts: [number, number][] = [];
+  for (let x = -20; x <= pw + 20; x += 20) pts.push([x, ph - 70]);
+  artSlope(ctx, pts, ph + 10, 4);
+  at(ctx, 140, ph - 70, 1.6, () => artFinishArch(ctx, 'ARRIVÉE', 0.5));
+  at(ctx, 420, ph - 70 - 22 * 1.6, 1.6, () => artWheel(ctx, 'valais', 22, 3, 4, 0.4));
+  at(ctx, 960, ph - 70, 1.6, () => friendsFeast(ctx, 0.31, true));
+  ctx.restore();
+  // the game's framing on a phone held sideways: 820 units across (arch to table), scaled to fit
+  const sx = 1620, sw = 720, sy = pyy, sh = sw * 390 / 844;
+  ctx.save(); ctx.beginPath(); ctx.roundRect(sx, sy, sw, sh, 16); ctx.clip(); ctx.translate(sx, sy);
+  artSky(ctx, sw, sh, sw * 0.8, sh * 0.2);
+  artRange(ctx, sw, sh * 0.62, 150, '#8ea9c8', 0.42, 3);
+  const k = sw / 820, gy = sh * 0.68;
+  const pts2: [number, number][] = [];
+  for (let x = -20; x <= sw + 20; x += 20) pts2.push([x, gy]);
+  artSlope(ctx, pts2, sh + 10, 5);
+  at(ctx, 120 * k, gy, k, () => artFinishArch(ctx, 'ARRIVÉE', 0.5));
+  at(ctx, (120 + 520 - 222) * k, gy - 22 * k, k, () => artWheel(ctx, 'valais', 22, 3, 4, 0.4));
+  at(ctx, (120 + 520) * k, gy, k, () => friendsFeast(ctx, 0.31, true));
+  ctx.restore();
+  label(ctx, 'le cadrage du jeu sur un téléphone en paysage (réduit)', sx + sw / 2, sy + sh + 30, 22, TEXT, '#6b7a8c');
+}
+
 async function main(): Promise<void> {
   await Promise.all([document.fonts.load(`40px 'Lilita One'`), document.fonts.load(`600 20px 'Fredoka'`)]);
   sheet(document.getElementById('sheet') as HTMLCanvasElement);
   scene(document.getElementById('scene') as HTMLCanvasElement);
+  friendsSheet(document.getElementById('friends') as HTMLCanvasElement);
   (window as unknown as { artReady: boolean }).artReady = true;
 }
 void main();
