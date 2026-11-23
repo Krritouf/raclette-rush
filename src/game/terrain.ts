@@ -15,6 +15,8 @@ export interface Obstacle {
   passed: boolean;
   /** How far it has toppled after a hit, 0..1.3 (looks only). */
   rot: number;
+  /** Which look: the cows take turns, 0 the black Hérens, 1 the spotted one. */
+  variant?: number;
 }
 
 /** A potato floating dy above the ground; once the magnet pulls it, it moves freely at fx, fy. */
@@ -44,6 +46,7 @@ export class Terrain {
   private target = 0.3;
   private feat: Feature = 'normal';
   private featLeft = 30;
+  private cows = 0;
   private lastLaunch = -1e9;
   private nextObsX: number;
   private nextPotX: number;
@@ -110,7 +113,7 @@ export class Terrain {
       if (nx > this.nextObsX && (this.feat === 'normal' || this.feat === 'flat') && this.featLeft > 3 && nx - this.lastLaunch >= sp.landingZone) {
         const pool = sp.pools.find(p => nx < p.until) ?? sp.pools[sp.pools.length - 1];
         const t = pick(r, pool.types) as ObstacleType;
-        this.obstacles.push({ x: nx, t, hit: false, passed: false, rot: 0 });
+        this.obstacles.push({ x: nx, t, hit: false, passed: false, rot: 0, variant: t === 'cow' ? this.cows++ % 2 : 0 });
         this.nextObsX = nx + range(r, sp.gapMin - sp.gapMinDrop * diff, sp.gapMax - sp.gapMaxDrop * diff);
       }
       // potatoes, in an arc, sometimes high up

@@ -9,6 +9,7 @@ const out = (name: string): string => resolve('qa/evidence', `${name}.png`);
 async function open(page: Page, q: string): Promise<void> {
   await page.goto(url(q));
   await page.waitForFunction(() => typeof window.game?.step === 'function');
+  await page.waitForFunction(() => document.fonts.check(`20px 'Lilita One'`) && document.fonts.check(`600 20px 'Fredoka'`));
 }
 const step = (page: Page, n: number): Promise<void> => page.evaluate(k => window.game!.step(k), n);
 

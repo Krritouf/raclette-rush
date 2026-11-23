@@ -1,6 +1,8 @@
 // The effects that only look: flying crumbs, words popping up over the wheel, the screen shake.
 // They use Math.random, never the run's Rng, so they never change the game.
 
+import { DISPLAY, INK } from './art';
+
 /** A crumb, a snowflake or a splinter. */
 interface Particle { x: number; y: number; vx: number; vy: number; life: number; c: string; sz: number }
 
@@ -46,9 +48,9 @@ export class Fx {
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     for (const t of this.texts) {
       ctx.globalAlpha = Math.max(0, Math.min(1, t.life));
-      ctx.font = `800 ${t.size}px system-ui, sans-serif`;
+      ctx.font = `${t.size}px ${DISPLAY}`;
       const s = tr(t.s);
-      ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.strokeText(s, t.x, t.y);
+      ctx.lineJoin = 'round'; ctx.lineWidth = t.size * 0.28; ctx.strokeStyle = INK; ctx.strokeText(s, t.x, t.y);
       ctx.fillStyle = t.col; ctx.fillText(s, t.x, t.y);
     }
     ctx.globalAlpha = 1;

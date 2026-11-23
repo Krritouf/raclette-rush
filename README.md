@@ -15,14 +15,15 @@ Every command runs in this folder.
 | `npm run smoke` | The boot check alone |
 | `npm run sim` | The balance bot: distance and potatoes per run |
 | `npx playwright test --config tools/shots.config.ts` | Screenshots of every screen into `qa/evidence/` |
+| `npm run art` | The art sheet and a sample scene, as PNG, into `design/art/` |
 
 ## Layout
 
 ```text
 data/         every gameplay value: config.json, cheeses.json, missions.json
-design/       game-brief.md
+design/       game-brief.md, art/ (the art sheets)
 src/game/     the rules, with no drawing: terrain, run, missions, save, rng
-src/render/   the world and the shapes (Canvas 2D paths, no image files)
+src/render/   art.ts (every shape, Canvas 2D paths, no image files), world.ts, fx.ts
 src/screens.ts, src/ui.ts   the menus and the HUD
 src/main.ts   the loop, input, sound and save, put together
 tests/        unit/ (Vitest) and integration/ (Playwright)

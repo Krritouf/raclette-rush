@@ -2,6 +2,9 @@
 // sound, the save and the screens. The game logic steps at a fixed 60 Hz, so a run plays the same
 // on any screen; the drawing happens once a frame.
 
+import '@fontsource/lilita-one/latin-400.css';
+import '@fontsource/fredoka/latin-600.css';
+import '@fontsource/fredoka/latin-700.css';
 import type { Actions, App, Scene, Summary } from './app';
 import { rollSound, setHidden, setMood, setMusic, setSound, sfx, startAudio, updateMusic } from './audio';
 import { CHEESES, MISSIONS, TUNE, cheeseById } from './config';
@@ -25,6 +28,10 @@ const storage: Store = (() => {
   try { localStorage.setItem('raclette_probe', '1'); localStorage.removeItem('raclette_probe'); return localStorage; }
   catch { const m = new Map<string, string>(); return { getItem: k => m.get(k) ?? null, setItem: (k, v) => void m.set(k, v) }; }
 })();
+
+// The canvas only draws with a web font once it is loaded: ask for both now. Until then the
+// fallback fonts draw; the frame after they arrive uses them.
+for (const f of [`20px 'Lilita One'`, `600 20px 'Fredoka'`, `700 20px 'Fredoka'`]) void document.fonts.load(f).catch(() => { /* fallback font */ });
 
 const save = load(storage, defaultLang());
 const langParam = params.get('lang');
