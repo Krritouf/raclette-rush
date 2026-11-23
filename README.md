@@ -5,6 +5,9 @@ Web Audio. The original one-file prototype is kept in `prototype/`.
 
 Every command runs in this folder.
 
+**Play it:** https://krritouf.github.io/raclette-rush/ — every push to `main` runs the unit tests, builds
+the game and publishes it there (`.github/workflows/pages.yml`).
+
 | Command | What it does |
 |---------|--------------|
 | `npm run dev` | The game on a local server, reloaded on every change |
