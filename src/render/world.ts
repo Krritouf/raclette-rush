@@ -53,7 +53,11 @@ export class Camera {
   }
   private ty(run: Run, v: View): number {
     const vh = v.H / (v.S * this.zoom);
-    if (run.state === 'won') return run.terrain.groundAt(run.tableX) - vh * 0.68;
+    if (run.state === 'won') {
+      // once the end panel is up (at the top of the screen), the feast moves down to stay in view below it
+      const panelUp = run.wonT > run.tune.finish.celebrate;
+      return run.terrain.groundAt(run.tableX) - vh * (panelUp ? 0.97 : 0.68);
+    }
     return run.m.y - vh * 0.45;
   }
 }

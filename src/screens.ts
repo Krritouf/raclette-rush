@@ -211,6 +211,7 @@ function pause(ctx: Ctx, app: App, act: Actions): void {
 // ---------- the end of a run ----------
 function over(ctx: Ctx, app: App, act: Actions): void {
   const { W, H, u } = app.view, s = app.summary, ui = app.ui;
+  if (s?.level?.won) { levelWon(ctx, app, act); return; }
   dim(ctx, app, Math.min(0.55, app.sceneT * 2));
   if (!s) return;
   if (s.level) { levelOver(ctx, app, act); return; }
@@ -255,35 +256,67 @@ function potatoesLine(ctx: Ctx, u: number, cx: number, y: number, n: number, tot
   text(ctx, pt, cx + 8 * u, y + 1, 26 * u, { display: true, raw: true });
 }
 
-/** The end of an Adventure level: the stars and the feast, or how far the wheel got. */
+/**
+ * A level won: a compact panel at the top of the screen, so the friends at the table stay in view
+ * below it (the camera moves the feast down, src/render/world.ts).
+ */
+function levelWon(ctx: Ctx, app: App, act: Actions): void {
+  const { W, H, u } = app.view, s = app.summary!, lv = s.level!, ui = app.ui, p = pad(app);
+  // a light shade behind the panel only, fading out before the guests
+  const shade = ctx.createLinearGradient(0, 0, 0, H * 0.6);
+  shade.addColorStop(0, `rgba(15,30,50,${Math.min(0.4, app.sceneT)})`); shade.addColorStop(1, 'rgba(15,30,50,0)');
+  ctx.fillStyle = shade; ctx.fillRect(0, 0, W, H * 0.6);
+  const lines = s.completed.length;
+  const pw = Math.min(560 * u, W - 24), ph = (232 + lines * 18) * u;
+  const px = W / 2 - pw / 2, py = p.t;
+  panel(ctx, px, py, pw, ph, u);
+  let y = py + 26 * u;
+  text(ctx, 'BON APPÉTIT !', W / 2, y, 32 * u, { display: true, color: '#ffd257', outline: INK, outlineW: 6 * u });
+  y += 30 * u;
+  text(ctx, `${tr(`NIVEAU ${lv.index + 1}`)} — ${tr(lv.name)}`, W / 2, y, 15 * u, { weight: 700, color: 'rgba(42,59,82,0.75)', maxW: pw - 30 * u, raw: true });
+  y += 34 * u;
+  // the stars, one after the other
+  const labels = ['Arrivé au repas', 'La moitié des patates', 'Sans perdre une part'];
+  for (let k = 0; k < 3; k++) {
+    const sx = W / 2 + (k - 1) * pw * 0.28, t = Math.max(0, Math.min(1, (app.sceneT - 0.3 - k * 0.35) * 4));
+    const pop = lv.stars[k] ? 1 + Math.sin(t * Math.PI) * 0.35 : 1;
+    ctx.save(); ctx.translate(sx, y); ctx.scale(pop, pop); artStar(ctx, 20 * u, lv.stars[k] && t > 0); ctx.restore();
+    text(ctx, labels[k], sx, y + 31 * u, 12 * u, { weight: 700, color: lv.stars[k] ? NAVY : 'rgba(42,59,82,0.45)', maxW: pw * 0.28 - 6 * u });
+  }
+  y += 56 * u;
+  potatoesLine(ctx, u * 0.85, W / 2, y, s.potatoes, lv.total);
+  y += 22 * u;
+  for (const c of s.completed) {
+    text(ctx, `✓ ${tr(describe(c.def))}  +${c.def.reward}`, W / 2, y, 13 * u, { weight: 700, color: GREEN, maxW: pw - 30 * u, raw: true });
+    y += 18 * u;
+  }
+  const bh = 44 * u, by = py + ph - bh - 16 * u, gap = 10 * u;
+  const buttons: { id: string; label: string; action: () => void; primary?: boolean }[] = [
+    ...(lv.next ? [{ id: 'next', label: 'SUIVANT', action: () => act.nextLevel(), primary: true }] : []),
+    { id: 'again', label: 'REJOUER', action: () => act.restart(), primary: !lv.next },
+    { id: 'levels', label: 'NIVEAUX', action: () => act.back() },
+  ];
+  const bw = (pw - 40 * u - gap * (buttons.length - 1)) / buttons.length;
+  buttons.forEach((b, i) => ui.button(ctx, { id: b.id, x: px + 20 * u + i * (bw + gap), y: by, w: bw, h: bh, label: b.label,
+    style: b.primary ? 'primary' : 'secondary', action: b.action }));
+}
+
+/** The end of an Adventure level lost: how far the wheel got. */
 function levelOver(ctx: Ctx, app: App, act: Actions): void {
   const { W, H, u } = app.view, s = app.summary!, lv = s.level!, ui = app.ui;
   const lines = s.completed.length;
-  const pw = Math.min(480 * u, W - 24), ph = Math.min(H - 16, ((lv.won ? 300 : 250) + lines * 24) * u);
+  const pw = Math.min(480 * u, W - 24), ph = Math.min(H - 16, (250 + lines * 24) * u);
   const px = W / 2 - pw / 2, py = H / 2 - ph / 2;
   panel(ctx, px, py, pw, ph, u);
   let y = py + 34 * u;
-  if (lv.won) text(ctx, 'BON APPÉTIT !', W / 2, y, 38 * u, { display: true, color: '#ffd257', outline: INK, outlineW: 7 * u });
-  else text(ctx, s.reason, W / 2, y, 26 * u, { display: true, maxW: pw - 30 * u });
+  text(ctx, s.reason, W / 2, y, 26 * u, { display: true, maxW: pw - 30 * u });
   y += 36 * u;
   text(ctx, `${tr(`NIVEAU ${lv.index + 1}`)} — ${tr(lv.name)}`, W / 2, y, 17 * u, { weight: 700, color: 'rgba(42,59,82,0.75)', maxW: pw - 30 * u, raw: true });
   y += 22 * u;
-  if (lv.won) {
-    // the stars, one after the other
-    const labels = ['Arrivé au repas', 'La moitié des patates', 'Sans perdre une part'];
-    for (let k = 0; k < 3; k++) {
-      const sx = W / 2 + (k - 1) * pw * 0.3, t = Math.max(0, Math.min(1, (app.sceneT - 0.3 - k * 0.35) * 4));
-      const pop = lv.stars[k] ? 1 + Math.sin(t * Math.PI) * 0.35 : 1;
-      ctx.save(); ctx.translate(sx, y + 34 * u); ctx.scale(pop, pop); artStar(ctx, 26 * u, lv.stars[k] && t > 0); ctx.restore();
-      text(ctx, labels[k], sx, y + 76 * u, 13 * u, { weight: 700, color: lv.stars[k] ? NAVY : 'rgba(42,59,82,0.45)', maxW: pw * 0.3 - 6 * u });
-    }
-    y += 104 * u;
-  } else {
-    const bw = pw - 80 * u;
-    bar(ctx, W / 2 - bw / 2, y + 10 * u, bw, 16 * u, lv.progress, '#ffd257');
-    text(ctx, `Arrivée à ${Math.round(lv.progress * 100)} %`, W / 2, y + 44 * u, 17 * u, { weight: 700 });
-    y += 72 * u;
-  }
+  const trackW = pw - 80 * u;
+  bar(ctx, W / 2 - trackW / 2, y + 10 * u, trackW, 16 * u, lv.progress, '#ffd257');
+  text(ctx, `Arrivée à ${Math.round(lv.progress * 100)} %`, W / 2, y + 44 * u, 17 * u, { weight: 700 });
+  y += 72 * u;
   potatoesLine(ctx, u, W / 2, y, s.potatoes, lv.total);
   y += 30 * u;
   for (const c of s.completed) {
@@ -291,12 +324,10 @@ function levelOver(ctx: Ctx, app: App, act: Actions): void {
     y += 24 * u;
   }
   const bh = 52 * u, by = py + ph - bh - 20 * u, gap = 12 * u;
-  const buttons: { id: string; label: string; action: () => void; primary?: boolean }[] = lv.won
-    ? [...(lv.next ? [{ id: 'next', label: 'SUIVANT', action: () => act.nextLevel(), primary: true }] : []),
-      { id: 'again', label: 'REJOUER', action: () => act.restart(), primary: !lv.next },
-      { id: 'levels', label: 'NIVEAUX', action: () => act.back() }]
-    : [{ id: 'again', label: 'RECOMMENCER', action: () => act.restart(), primary: true },
-      { id: 'levels', label: 'NIVEAUX', action: () => act.back() }];
+  const buttons: { id: string; label: string; action: () => void; primary?: boolean }[] = [
+    { id: 'again', label: 'RECOMMENCER', action: () => act.restart(), primary: true },
+    { id: 'levels', label: 'NIVEAUX', action: () => act.back() },
+  ];
   const bw = (pw - 40 * u - gap * (buttons.length - 1)) / buttons.length;
   buttons.forEach((b, i) => ui.button(ctx, { id: b.id, x: px + 20 * u + i * (bw + gap), y: by, w: bw, h: bh, label: b.label,
     style: b.primary ? 'primary' : 'secondary', action: b.action }));
