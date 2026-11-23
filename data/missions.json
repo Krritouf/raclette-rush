@@ -1,0 +1,22 @@
+[
+  { "type": "distance", "target": 500, "reward": 20 },
+  { "type": "potatoes", "target": 15, "reward": 20 },
+  { "type": "jumps", "target": 25, "reward": 20 },
+  { "type": "distance", "target": 1000, "reward": 30 },
+  { "type": "powerups", "target": 1, "reward": 25 },
+  { "type": "noHit", "target": 400, "reward": 30 },
+  { "type": "trees", "target": 5, "reward": 35 },
+  { "type": "potatoes", "target": 40, "reward": 40 },
+  { "type": "runs", "target": 10, "reward": 40 },
+  { "type": "distance", "target": 2000, "reward": 50 },
+  { "type": "cows", "target": 3, "reward": 50 },
+  { "type": "airTime", "target": 1.2, "reward": 50 },
+  { "type": "totalDistance", "target": 10000, "reward": 60 },
+  { "type": "noHit", "target": 1000, "reward": 60 },
+  { "type": "powerups", "target": 3, "reward": 60 },
+  { "type": "potatoes", "target": 80, "reward": 70 },
+  { "type": "distance", "target": 3500, "reward": 80 },
+  { "type": "cows", "target": 10, "reward": 80 },
+  { "type": "noHit", "target": 2000, "reward": 100 },
+  { "type": "distance", "target": 5000, "reward": 120 }
+]

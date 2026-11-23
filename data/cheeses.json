@@ -1,0 +1,17 @@
+[
+  { "id": "valais", "name": "Raclette du Valais", "desc": "La meule classique, bien équilibrée",
+    "price": 0, "portions": 4, "radius": 22, "jump": 1, "magnet": 0,
+    "paste": "#f6d36b", "rind": "#c9832c", "stamp": "VS", "holes": 2 },
+  { "id": "tomme", "name": "Tomme", "desc": "Petite et légère : elle saute plus haut",
+    "price": 150, "portions": 3, "radius": 19, "jump": 1.12, "magnet": 0,
+    "paste": "#f6eed6", "rind": "#a8a28c", "stamp": "", "holes": 1 },
+  { "id": "emmental", "name": "Emmental", "desc": "Ses trous attirent les pommes de terre",
+    "price": 400, "portions": 4, "radius": 22, "jump": 1, "magnet": 80,
+    "paste": "#fae38c", "rind": "#d9b24a", "stamp": "", "holes": 5 },
+  { "id": "gruyere", "name": "Gruyère", "desc": "Solide : une portion de plus",
+    "price": 700, "portions": 5, "radius": 23, "jump": 0.98, "magnet": 0,
+    "paste": "#f0c85a", "rind": "#8f6127", "stamp": "", "holes": 0 },
+  { "id": "tete", "name": "Tête de Moine", "desc": "La reine de la montagne : six portions",
+    "price": 1200, "portions": 6, "radius": 24, "jump": 0.96, "magnet": 40,
+    "paste": "#f4da8e", "rind": "#6b3f22", "stamp": "", "holes": 1 }
+]

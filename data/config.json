@@ -1,0 +1,81 @@
+{
+  "seed": 0,
+  "physics": {
+    "gravity": 1400,
+    "jump": 600,
+    "jumpCut": 0.5,
+    "jumpCutSpeed": 150,
+    "minJumpTime": 0.05,
+    "rollDrag": 0.12,
+    "maxSpeed": 950,
+    "minSpeed": 260,
+    "minSpeedPush": 750,
+    "launchSpeed": 220,
+    "jumpBuffer": 0.13,
+    "coyote": 0.1,
+    "bounceSpeed": 350,
+    "bounce": 0.25,
+    "substeps": 4
+  },
+  "hits": {
+    "invulnerable": 0.5,
+    "knockUp": 220,
+    "hitbox": 0.8,
+    "shieldSlow": 0.85
+  },
+  "terrain": {
+    "step": 20,
+    "startX": 120,
+    "startY": 200,
+    "calmUntil": 600,
+    "difficultyDistance": 30000,
+    "features": { "normal": 0.5, "kicker": 0.18, "cliff": 0.16, "flat": 0.16 },
+    "cliffMin": 70,
+    "cliffMax": 140,
+    "cliffMaxHard": 80
+  },
+  "obstacles": {
+    "rock":  { "w": 34, "h": 24, "dmg": 1, "slow": 0.55 },
+    "fence": { "w": 56, "h": 34, "dmg": 1, "slow": 0.45 },
+    "tree":  { "w": 30, "h": 78, "dmg": 1, "slow": 0.3 },
+    "cow":   { "w": 78, "h": 52, "dmg": 2, "slow": 0.2 }
+  },
+  "spawn": {
+    "firstObstacle": 900,
+    "gapMin": 420,
+    "gapMinDrop": 200,
+    "gapMax": 900,
+    "gapMaxDrop": 400,
+    "pools": [
+      { "until": 3000, "types": ["rock", "rock", "fence"] },
+      { "until": 8000, "types": ["rock", "fence", "tree", "tree"] },
+      { "until": 1000000000, "types": ["rock", "fence", "tree", "cow", "cow"] }
+    ],
+    "firstPotato": 500,
+    "potatoGapMin": 500,
+    "potatoGapMax": 1100,
+    "potatoSpacing": 34,
+    "potatoRowMin": 3,
+    "potatoRowMax": 7,
+    "potatoHighChance": 0.4,
+    "firstPower": 2500,
+    "powerGapMin": 1800,
+    "powerGapMax": 3500
+  },
+  "powers": {
+    "magnetTime": 8,
+    "magnetRadius": 200,
+    "turboTime": 3,
+    "turboSpeed": 880,
+    "healFullBonus": 10,
+    "weights": { "shield": 3, "magnet": 3, "turbo": 2, "heal": 2 }
+  },
+  "tutorial": {
+    "obstacles": [[1000, "rock"], [1750, "fence"], [2550, "tree"]],
+    "end": 2900,
+    "hintDistance": 190,
+    "slowMotion": 0.2
+  },
+  "unitsPerMeter": 10,
+  "comboWindow": 0.6
+}
