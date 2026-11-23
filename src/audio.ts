@@ -6,7 +6,7 @@ import { audioContext } from './hook';
 
 /** The sound effects the game plays. */
 export type Sfx = 'jump' | 'land' | 'hit' | 'moo' | 'potato' | 'power' | 'shield' | 'smash' | 'dead'
-  | 'click' | 'buy' | 'denied' | 'mission' | 'clear';
+  | 'click' | 'buy' | 'denied' | 'mission' | 'clear' | 'finish' | 'cheer';
 
 /** The music's mood: calm in the menus, livelier in a run, silent for a moment after a fall. */
 export type Mood = 'menu' | 'play' | 'over';
@@ -127,6 +127,14 @@ export function sfx(name: Sfx, n = 0): void {
     case 'denied': tone(180, 0.18, 'square', 0.15); tone(150, 0.2, 'square', 0.15, 0.1); break;
     case 'mission': [523, 659, 784].forEach((f, i) => tone(f, 0.12, 'square', 0.13, i * 0.09)); tone(1047, 0.4, 'square', 0.13, 0.27); break;
     case 'clear': tone(1320, 0.06, 'sine', 0.08); break;
+    case 'finish': // a fanfare as the wheel crosses the line
+      [523, 659, 784, 1047, 784, 1047].forEach((f, i) => tone(f, i < 5 ? 0.14 : 0.6, 'square', 0.13, i * 0.11));
+      tone(262, 0.9, 'triangle', 0.25, 0.55); tone(392, 0.9, 'triangle', 0.18, 0.55);
+      break;
+    case 'cheer': // the guests shout as their arms go up: a crowd of noise and a few voices
+      burst(0.55, 1100, 0.32, 'bandpass'); burst(0.4, 2200, 0.16, 'bandpass', 0.05);
+      for (let i = 0; i < 3; i++) tone(260 + Math.random() * 180, 0.22, 'sawtooth', 0.05, Math.random() * 0.08, 1.25);
+      break;
   }
 }
 

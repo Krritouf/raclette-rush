@@ -41,6 +41,14 @@ describe('save', () => {
     expect(d.bank).toBe(5);
   });
 
+  it('keeps the Adventure stars, and cleans a tampered list', () => {
+    const s = memory(), d = defaults();
+    d.stars = [3, 1, 2];
+    store(s, d);
+    expect(load(s).stars).toEqual([3, 1, 2]);
+    expect(load(memory({ [SAVE_KEY]: JSON.stringify({ stars: [3, 9, -1, 'x', 2.5, 1] }) })).stars).toEqual([3, 0, 0, 0, 0, 1]);
+  });
+
   it('chooses only a cheese already bought', () => {
     const d = defaults();
     expect(choose(d, 'gruyere')).toBe(false);

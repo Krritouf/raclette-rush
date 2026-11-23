@@ -5,7 +5,7 @@
 
 import type { Run } from '../game/run';
 import {
-  artChalet, artCloud, artCow, artFarFir, artFence, artFir, artFlower, artPotato, artPowerBubble, artPowerIcon,
+  INK, artChalet, artCloud, artCow, artFarFir, artFeast, artFence, artFinishArch, artFir, artFlower, artPotato, artPowerBubble, artPowerIcon,
   artRangeTile, artRock, artSky, artWheel,
 } from './art';
 import type { Fx } from './fx';
@@ -27,21 +27,38 @@ export function worldScale(W: number, H: number): number {
   return Math.min(H / WORLD_H, W / WORLD_W);
 }
 
-/** Follows the wheel, a little ahead of it as it speeds up. */
+/** Follows the wheel, a little ahead of it as it speeds up; past a level's finish line, it frames the feast and zooms in. */
 export class Camera {
   x = 0; y = 0;
+  /** 1 in play; up to FEAST_ZOOM while the guests cheer. */
+  zoom = 1;
 
   /** Jumps straight to the wheel. */
-  snap(run: Run, v: View): void { this.x = this.tx(run, v); this.y = this.ty(run, v); }
+  snap(run: Run, v: View): void { this.zoom = 1; this.x = this.tx(run, v); this.y = this.ty(run, v); }
 
   follow(run: Run, v: View, dt: number): void {
-    this.x += (this.tx(run, v) - this.x) * Math.min(1, dt * 7);
-    this.y += (this.ty(run, v) - this.y) * Math.min(1, dt * 5);
+    // as close as the screen allows with the arch and the whole table in view
+    const feast = Math.max(1, Math.min(FEAST_ZOOM, (v.W / v.S) / FEAST_WIDTH));
+    this.zoom += ((run.state === 'won' ? feast : 1) - this.zoom) * Math.min(1, dt * 2.5);
+    const k = run.state === 'won' ? 1.5 : 1;
+    this.x += (this.tx(run, v) - this.x) * Math.min(1, dt * 7 / k);
+    this.y += (this.ty(run, v) - this.y) * Math.min(1, dt * 5 / k);
   }
 
-  private tx(run: Run, v: View): number { return run.m.x - (v.W / v.S) * (0.3 - Math.min(0.1, run.m.vx / 9000)); }
-  private ty(run: Run, v: View): number { return run.m.y - (v.H / v.S) * 0.45; }
+  private tx(run: Run, v: View): number {
+    const vw = v.W / (v.S * this.zoom);
+    if (run.state === 'won') return (run.finishX + run.tableX) / 2 + 30 - vw / 2;
+    return run.m.x - vw * (0.3 - Math.min(0.1, run.m.vx / 9000));
+  }
+  private ty(run: Run, v: View): number {
+    const vh = v.H / (v.S * this.zoom);
+    if (run.state === 'won') return run.terrain.groundAt(run.tableX) - vh * 0.68;
+    return run.m.y - vh * 0.45;
+  }
 }
+
+/** How close the camera comes for the feast, at most, and the width it keeps in view (the arch to the table's end). */
+const FEAST_ZOOM = 1.45, FEAST_WIDTH = 820;
 
 /** A number in [0, 1) that is always the same for the same n: places the grass and flowers. */
 function hash(n: number): number {
@@ -140,7 +157,7 @@ function drawSlope(ctx: Ctx, run: Run, i0: number, i1: number, x0: number, botto
 
 /** Draws the whole world for this frame. */
 export function drawWorld(ctx: Ctx, v: View, cam: Camera, run: Run, fx: Fx, time: number, tr: (s: string) => string): void {
-  const { W, H, dpr, S } = v;
+  const { W, H, dpr } = v, S = v.S * cam.zoom;
   const viewW = W / S, viewH = H / S;
   const T = run.terrain, m = run.m;
 
@@ -181,6 +198,18 @@ export function drawWorld(ctx: Ctx, v: View, cam: Camera, run: Run, fx: Fx, time
   for (const u of T.powerups) {
     if (u.got || !inView(u.x, 40)) continue;
     ctx.save(); ctx.translate(u.x, T.groundAt(u.x) - u.dy + Math.sin(time * 4 + u.x * 0.01) * 4); artPowerBubble(ctx, u.t, time); ctx.restore();
+  }
+  if (run.level) {
+    // the end of the level: the arch over a chequered line, then the feast
+    if (inView(run.finishX, 140)) {
+      ctx.save(); ctx.translate(run.finishX, T.groundAt(run.finishX));
+      for (let c = 0; c < 2; c++) for (let r = 0; r < 3; r++) { ctx.fillStyle = (c + r) % 2 ? '#ffffff' : INK; ctx.fillRect(-6 + c * 6, -2 + r * 6, 6, 6); }
+      artFinishArch(ctx, tr('ARRIVÉE'), time);
+      ctx.restore();
+    }
+    if (inView(run.tableX, 220)) {
+      ctx.save(); ctx.translate(run.tableX, T.groundAt(run.tableX)); artFeast(ctx, time, run.state === 'won'); ctx.restore();
+    }
   }
   for (const o of T.obstacles) {
     if (!inView(o.x, 120)) continue;

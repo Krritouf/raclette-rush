@@ -39,15 +39,52 @@ export interface Tune {
     firstPower: number; powerGapMin: number; powerGapMax: number;
     /** After a kicker or a cliff: a calm slope this long, with no obstacle and no other launch. */
     landingZone: number;
+    /** Before an obstacle: a smooth slope this long, that never steepens, so the wheel stays on the ground to jump. */
+    runUp: number;
+    /** The least space after a tall obstacle (a tree, a cow) and after a short one, in units. */
+    minGapAfterTall: number;
+    minGapAfterShort: number;
   };
   powers: {
     magnetTime: number; magnetRadius: number; turboTime: number; turboSpeed: number; healFullBonus: number;
     weights: Record<PowerType, number>;
   };
   tutorial: { obstacles: (number | string)[][]; end: number; hintDistance: number; slowMotion: number };
+  /** The end of an Adventure level, in units. */
+  finish: {
+    /** Before the line, the slope eases off over this distance. */
+    approach: number;
+    /** No obstacle, potato or bonus this close to the line. */
+    clearBefore: number;
+    /** From the line to the feast table. */
+    tableGap: number;
+    /** The wheel stops this far before the table. */
+    stopBefore: number;
+    /** Seconds of celebration before the level's end screen. */
+    celebrate: number;
+  };
   unitsPerMeter: number;
   comboWindow: number;
 }
+
+/** data/levels.json: one Adventure level. The same seed builds the same mountain every time. */
+export interface LevelDef {
+  name: string;
+  seed: number;
+  /** Metres from the start to the finish line. */
+  length: number;
+  /** 0..1: steeper slopes and higher cliffs. */
+  difficulty: number;
+  /** The obstacles that can appear, picked at random (a type listed twice comes twice as often). */
+  obstacles: string[];
+  /** How often each kind of ground comes (they add up to 1). */
+  features: { normal: number; kicker: number; cliff: number; flat: number };
+  /** The space between two obstacles, in units: least and most. */
+  gap: number[];
+}
+
+/** A level as the terrain needs it: its definition and where its finish line is. */
+export interface LevelTerrain { def: LevelDef; finishX: number }
 
 /** data/cheeses.json: one wheel the player can roll. */
 export interface Cheese {

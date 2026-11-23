@@ -4,7 +4,7 @@
 
 import { makeRng } from './rng';
 import { Terrain, type Obstacle } from './terrain';
-import type { Cheese, ObstacleType, PowerType, Tune } from './types';
+import type { Cheese, LevelDef, ObstacleType, PowerType, Tune } from './types';
 
 /** The wheel. y is its centre; a is its rotation. */
 export interface Wheel {
@@ -42,13 +42,14 @@ export type RunEvent =
   | { type: 'clear'; obstacle: ObstacleType }
   | { type: 'potato'; x: number; y: number; combo: number }
   | { type: 'power'; power: PowerType; x: number; y: number; bonus: number }
-  | { type: 'tutorialDone' };
+  | { type: 'tutorialDone' }
+  | { type: 'finish' };
 
 /** The tutorial's prompt: a tap for a small jump, a long press for a big one. */
 export type Hint = null | 'tap' | 'hold';
 
-/** The state of a run: waiting at the top, rolling, or broken. */
-export type RunState = 'ready' | 'play' | 'dead';
+/** The state of a run: waiting at the top, rolling, broken, or past an Adventure level's finish line. */
+export type RunState = 'ready' | 'play' | 'dead' | 'won';
 
 const clamp = (v: number, a: number, b: number): number => Math.max(a, Math.min(b, v));
 
@@ -74,6 +75,14 @@ export class Run {
   lastHit: ObstacleType | null = null;
   /** Seconds since the run started rolling. */
   time = 0;
+  /** Seconds since the wheel crossed the finish line. */
+  wonT = 0;
+  /** An Adventure level's finish line, in units (Infinity in a Quick Game). */
+  readonly finishX: number;
+  /** Where the feast table stands, past the finish line. */
+  readonly tableX: number;
+  /** The potatoes laid before the finish line (0 in a Quick Game). */
+  readonly potatoTotal: number;
 
   private jumpBuf = 0;
   private coyote = 0;
@@ -90,12 +99,22 @@ export class Run {
    * @param cheese the wheel rolled
    * @param seed the mountain's seed
    * @param tutorial true on the very first run
+   * @param level an Adventure level (its seed replaces `seed`); null for a Quick Game
    */
-  constructor(readonly tune: Tune, readonly cheese: Cheese, readonly seed: number, tutorial = false) {
+  constructor(readonly tune: Tune, readonly cheese: Cheese, readonly seed: number, tutorial = false, readonly level: LevelDef | null = null) {
     this.tutorial = tutorial;
-    this.terrain = new Terrain(tune, makeRng(seed), tutorial);
     const x = tune.terrain.startX;
-    this.terrain.genTo(2500);
+    this.finishX = level ? x + level.length * tune.unitsPerMeter : Infinity;
+    this.tableX = this.finishX + tune.finish.tableGap;
+    this.terrain = new Terrain(tune, makeRng(level ? level.seed : seed), tutorial, level ? { def: level, finishX: this.finishX } : null);
+    if (level) {
+      // the whole level, built now: it is short, and the end screen counts its potatoes
+      this.terrain.genTo(this.tableX + 1500);
+      this.potatoTotal = this.terrain.potatoes.filter(p => p.x < this.finishX).length;
+    } else {
+      this.terrain.genTo(2500);
+      this.potatoTotal = 0;
+    }
     this.m = { x, y: this.terrain.groundAt(x) - cheese.radius, vx: 0, vy: 0, a: 0, r: cheese.radius,
       portions: cheese.portions, maxPortions: cheese.portions, grounded: true, inv: 0 };
     this.noHitFrom = x;
@@ -123,6 +142,13 @@ export class Run {
   /** True while the button is held. */
   get held(): boolean { return this.holding; }
 
+  /** How far along the level the wheel is, 0..1 (0 in a Quick Game). */
+  get progress(): number {
+    if (!this.level) return 0;
+    const x0 = this.tune.terrain.startX;
+    return clamp((this.m.x - x0) / (this.finishX - x0), 0, 1);
+  }
+
   /** The distance rolled, in metres. */
   get meters(): number { return Math.max(0, Math.floor((this.m.x - this.tune.terrain.startX) / this.tune.unitsPerMeter)); }
 
@@ -140,7 +166,9 @@ export class Run {
   /** Moves the run on by dt seconds of real time. */
   update(dt: number): void {
     if (this.state === 'dead') this.deadT += dt;
+    if (this.state === 'won') this.wonT += dt;
     for (const o of this.terrain.obstacles) if (o.hit && o.rot < 1.3) o.rot += dt * 4;
+    if (this.state === 'won') { this.rollOut(dt); return; }
     if (this.state !== 'play') return;
 
     const P = this.tune.physics, m = this.m;
@@ -179,6 +207,25 @@ export class Run {
     this.checkPassed();
     if (this.tutorial) this.tutor(dt);
     this.terrain.prune(m.x - 1200);
+    if (this.state === 'play' && m.x >= this.finishX) {
+      this.state = 'won'; this.wonT = 0; this.hint = null; this.timeScale = 1; this.holding = false; this.jumpAge = -1;
+      this.events.push({ type: 'finish' });
+    }
+  }
+
+  /** Past the finish line: the wheel lands, brakes and stops just before the feast table. */
+  private rollOut(dt: number): void {
+    const m = this.m, P = this.tune.physics, stopX = this.tableX - this.tune.finish.stopBefore;
+    for (let i = 0; i < P.substeps; i++) {
+      const h = dt / P.substeps;
+      m.vy += P.gravity * h;
+      m.vx = Math.min(m.vx, Math.max(0, (stopX - m.x) * 2.2));
+      m.x += m.vx * h; m.y += m.vy * h;
+      const lift = m.r * Math.min(Math.hypot(this.terrain.slopeAt(m.x), 1), 1.6), g = this.terrain.groundAt(m.x);
+      m.grounded = m.y + lift > g - 0.5;
+      if (m.grounded) { m.y = g - lift; m.vy = Math.min(0, m.vy); }
+    }
+    m.a += (m.vx / m.r) * dt;
   }
 
   private jump(): void {

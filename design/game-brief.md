@@ -1,6 +1,6 @@
 # Raclette Rush — Game Brief
 
-*Last updated: 2026-11-23*
+*Last updated: 2026-11-23 (the Adventure)*
 
 ## The pitch
 
@@ -33,20 +33,32 @@ taking a slice. The player should laugh when they fail and want to go again righ
 
 | Mode | Status | What it is |
 |------|--------|------------|
-| **Endless** | built (steps 1–3) | A mountain generated from a seed, harder the further you go. Goal: the record, missions, potatoes. |
-| **Adventure** | step 4 | Courses from A to B (the finish is the chalet where the raclette waits), 1 to 3 stars, three mountains of about 10 levels each. |
+| **Adventure** (the main mode) | built | 10 fixed levels (`data/levels.json`), 500 m to 2,000 m, harder one after the other. Each ends at a finish arch; past it, the wheel rolls to a feast table where the guests raise their arms in time. 1 to 3 stars; finishing a level opens the next. |
+| **Quick Game** | built | The endless mountain from a random seed, harder the further you go. Goal: the record. |
+
+### The Adventure
+
+- **Fixed levels.** Each level is a seed, a length, a difficulty, the obstacles it allows, how often kickers and cliffs come, and the space between obstacles. The same seed builds the same mountain every time. A new level is one line in `data/levels.json`.
+- **Fair by proof.** `src/game/solver.ts` searches each level for a way through without a single hit (every jump moment and length, going back when stuck); a unit test fails if any level has a spot that cannot be cleared. Levels 3 and 10 had such a spot with their first seed and were given another.
+- **Stars.** One for reaching the feast, one for half the level's potatoes, one for losing no slice (a hit the pan blocks does not count). A replay never takes stars away.
+- **Losing.** The wheel breaks: the level starts again from the top.
+- **The finish.** The slope eases off before the line and lies flat after it; nothing to dodge or pick up near the line. The camera frames the arch and the table and comes closer while the guests cheer (`finish.celebrate` seconds), then the end screen shows the stars.
+- **Shared with the Quick Game.** Potatoes and missions count in both; the record is the Quick Game's.
+- **Difficulty, from the bot** (`npm run sim`): an imperfect bot clears levels 1–7 every time and levels 8–10 5 % to 45 % of the time.
 
 ## The loop
 
 Run → potatoes + mission rewards → shop (new cheese) → run with new strengths → longer
 runs → harder missions.
 
-## Systems (steps 1–3)
+## Systems
 
 | System | Where | Notes |
 |--------|-------|-------|
 | Terrain | `src/game/terrain.ts` | Seeded; slopes, kickers, cliffs, flats; obstacles, potatoes and bonuses along the way |
 | Run | `src/game/run.ts` | Physics from the prototype, unchanged in feel; variable jump; jump buffer and coyote time |
+| Levels | `src/game/levels.ts`, `src/game/solver.ts`, `data/levels.json` | Stars, unlocking, the fairness solver |
+| Fair terrain | `src/game/terrain.ts` | A landing zone after each kicker or cliff, a smooth run-up before each obstacle, a least gap after tall and short obstacles |
 | Bonuses | `src/game/run.ts` | Pan (absorbs one hit), magnet (8 s), turbo pickle (3 s, smashes obstacles), wedge (+1 slice, or +10 potatoes when the wheel is whole) |
 | Cheeses | `data/cheeses.json` | Valais (start), Tomme, Emmental, Gruyère, Tête de Moine: slices, size, jump, magnet |
 | Missions | `src/game/missions.ts`, `data/missions.json` | 3 active; per run or cumulative; the list loops with bigger targets |

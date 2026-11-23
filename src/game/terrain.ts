@@ -3,7 +3,7 @@
 // seed always gives the same mountain, however early or late the rest of the game asks for it.
 
 import { makeRng, pick, range, weighted, type Rng } from './rng';
-import type { ObstacleType, PowerType, Tune } from './types';
+import type { LevelTerrain, ObstacleType, PowerType, Tune } from './types';
 
 /** An obstacle on the slope; x is its left edge. */
 export interface Obstacle {
@@ -58,8 +58,11 @@ export class Terrain {
    * @param tune the game's values
    * @param rng the gameplay stream, from the run's seed
    * @param tutorial the first run: a calm slope with the tutorial's three obstacles placed by hand
+   * @param level an Adventure level: its own obstacles and difficulty, and a finish line followed by
+   *   a flat run-out for the feast; null for the endless Quick Game
    */
-  constructor(private readonly tune: Tune, private readonly rng: Rng, private readonly tutorial = false) {
+  constructor(private readonly tune: Tune, private readonly rng: Rng, private readonly tutorial = false,
+    private readonly level: LevelTerrain | null = null) {
     this.gy = [tune.terrain.startY];
     const sp = tune.spawn;
     this.scripted = tutorial ? tune.tutorial.obstacles.map(([x, t]) => ({ x: Number(x), t: t as ObstacleType })) : [];
@@ -78,14 +81,21 @@ export class Terrain {
     const T = this.tune, step = T.terrain.step, sp = T.spawn, r = this.rng;
     while (this.genX <= x + step * 2) {
       const d = this.genX;
-      const diff = Math.min(1, d / T.terrain.difficultyDistance);
+      const diff = this.level ? this.level.def.difficulty : Math.min(1, d / T.terrain.difficultyDistance);
+      const end = this.level ? this.level.finishX : Infinity;
       const calm = d < T.terrain.calmUntil || (this.tutorial && d < T.tutorial.end);
       let y = this.gy[this.gy.length - 1];
-      if (this.featLeft <= 0) {
-        const f = T.terrain.features;
+      // the run-up to the next obstacle: no new kicker or cliff, and below
+      const runUp = d >= this.nextObsX - sp.runUp && d < this.nextObsX + step * 2;
+      if (d >= end - T.finish.approach) {
+        // the end of a level: the slope eases off before the line, then lies flat for the feast
+        this.feat = d >= end ? 'flat' : 'normal'; this.featLeft = 1; this.target = d >= end ? 0 : 0.15;
+      } else if (this.featLeft <= 0) {
+        const f = this.level ? this.level.def.features : T.terrain.features;
         const p = r();
         const landing = d - this.lastLaunch < sp.landingZone;
         if (calm) { this.feat = 'normal'; this.featLeft = 10; if (this.tutorial) this.target = 0.28; }
+        else if (runUp) { this.feat = 'normal'; this.featLeft = 4; }
         else if (landing) { this.feat = 'normal'; this.featLeft = 6; }
         else if (p < f.normal) { this.feat = 'normal'; this.featLeft = Math.floor(range(r, 12, 35)); this.target = range(r, 0.22, 0.5 + 0.25 * diff); }
         else if (p < f.normal + f.kicker && this.feat !== 'flat') { this.feat = 'kicker'; this.featLeft = Math.floor(range(r, 4, 7)); }
@@ -94,6 +104,12 @@ export class Terrain {
       }
       if (this.feat === 'kicker') this.slope += (-0.45 - this.slope) * 0.5;
       else if (this.feat === 'cliff') { y += range(r, T.terrain.cliffMin, T.terrain.cliffMax + T.terrain.cliffMaxHard * diff); this.slope = this.target; }
+      else if (d >= end) this.slope += (0 - this.slope) * 0.15;
+      else if (runUp && this.feat === 'normal') {
+        // smooth, and never steeper: a slope that falls away would throw the wheel in the air
+        this.target = Math.min(this.target, this.slope);
+        this.slope += (this.target - this.slope) * 0.2;
+      }
       else this.slope += (this.target - this.slope) * 0.2 + range(r, -0.06, 0.06);
       if (this.feat === 'kicker' && this.featLeft === 1) this.target = range(r, 0.3, 0.55);
       y += this.slope * step;
@@ -110,14 +126,17 @@ export class Terrain {
       }
       // obstacles: only on a steady slope, never on a kicker or a cliff edge, and never where a wheel
       // thrown by the last kicker or cliff may still be in the air (it could not jump)
-      if (nx > this.nextObsX && (this.feat === 'normal' || this.feat === 'flat') && this.featLeft > 3 && nx - this.lastLaunch >= sp.landingZone) {
-        const pool = sp.pools.find(p => nx < p.until) ?? sp.pools[sp.pools.length - 1];
-        const t = pick(r, pool.types) as ObstacleType;
+      const open = nx < end - T.finish.clearBefore; // nothing to dodge or pick up near the line
+      if (open && nx > this.nextObsX && (this.feat === 'normal' || this.feat === 'flat') && this.featLeft > 3 && nx - this.lastLaunch >= sp.landingZone) {
+        const types = this.level ? this.level.def.obstacles : (sp.pools.find(p => nx < p.until) ?? sp.pools[sp.pools.length - 1]).types;
+        const t = pick(r, types) as ObstacleType;
         this.obstacles.push({ x: nx, t, hit: false, passed: false, rot: 0, variant: t === 'cow' ? this.cows++ % 2 : 0 });
-        this.nextObsX = nx + range(r, sp.gapMin - sp.gapMinDrop * diff, sp.gapMax - sp.gapMaxDrop * diff);
+        const [g0, g1] = this.level ? this.level.def.gap : [sp.gapMin - sp.gapMinDrop * diff, sp.gapMax - sp.gapMaxDrop * diff];
+        const least = t === 'tree' || t === 'cow' ? sp.minGapAfterTall : sp.minGapAfterShort;
+        this.nextObsX = nx + Math.max(least, range(r, g0, g1));
       }
       // potatoes, in an arc, sometimes high up
-      if (nx > this.nextPotX && this.feat !== 'cliff') {
+      if (open && nx > this.nextPotX && this.feat !== 'cliff') {
         const n = Math.floor(range(r, sp.potatoRowMin, sp.potatoRowMax)), high = r() < sp.potatoHighChance;
         for (let i = 0; i < n; i++) {
           const arc = Math.sin(i / Math.max(1, n - 1) * Math.PI);
@@ -126,7 +145,7 @@ export class Terrain {
         this.nextPotX = nx + range(r, sp.potatoGapMin, sp.potatoGapMax);
       }
       // bonuses
-      if (nx > this.nextPowX && this.feat !== 'cliff') {
+      if (open && nx > this.nextPowX && this.feat !== 'cliff') {
         this.powerups.push({ x: nx, dy: 70, t: weighted(r, T.powers.weights), got: false });
         this.nextPowX = nx + range(r, sp.powerGapMin, sp.powerGapMax);
       }

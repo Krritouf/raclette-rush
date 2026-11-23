@@ -26,6 +26,8 @@ export interface SaveData {
   missions: MissionState;
   tutorialDone: boolean;
   runs: number;
+  /** The Adventure: the best stars of each level, 0 for one not done yet. */
+  stars: number[];
   settings: Settings;
 }
 
@@ -35,7 +37,7 @@ export const SAVE_KEY = 'raclette_rush';
 /** A new player's save. */
 export function defaults(lang: 'fr' | 'en' = 'fr'): SaveData {
   return { best: 0, bank: 0, owned: ['valais'], cheese: 'valais', missions: initialMissions(),
-    tutorialDone: false, runs: 0, settings: { sound: true, music: true, vibrate: true, lang } };
+    tutorialDone: false, runs: 0, stars: [], settings: { sound: true, music: true, vibrate: true, lang } };
 }
 
 const num = (v: unknown, d: number): number => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : d);
@@ -61,6 +63,7 @@ export function load(store: Store, lang: 'fr' | 'en' = 'fr'): SaveData {
     missions: missionsOk ? ms! : d.missions,
     tutorialDone: bool(raw.tutorialDone, false),
     runs: num(raw.runs, 0),
+    stars: Array.isArray(raw.stars) ? raw.stars.map(v => (typeof v === 'number' && Number.isInteger(v) && v >= 0 && v <= 3 ? v : 0)) : [],
     settings: { sound: bool(st.sound, true), music: bool(st.music, true), vibrate: bool(st.vibrate, true),
       lang: st.lang === 'en' || st.lang === 'fr' ? st.lang : lang },
   };

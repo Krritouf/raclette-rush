@@ -3,7 +3,10 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { describe as sentence, missionDef } from '../../src/game/missions';
 import { EN, english } from '../../src/i18n';
+import levels from '../../data/levels.json';
 import { CHEESES, MISSIONS } from './fixtures';
+
+const LEVELS: { name: string }[] = levels;
 
 describe('English', () => {
   it('translates every mission', () => {
@@ -15,6 +18,10 @@ describe('English', () => {
 
   it('translates every cheese name and description', () => {
     for (const c of CHEESES) { expect(EN[c.name], c.name).toBeDefined(); expect(EN[c.desc], c.desc).toBeDefined(); }
+  });
+
+  it('translates every level name', () => {
+    for (const lv of LEVELS) expect(EN[lv.name], lv.name).toBeDefined();
   });
 
   it('translates every French sentence written in the screens and the game', () => {

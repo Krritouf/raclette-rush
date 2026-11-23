@@ -755,3 +755,213 @@ export function roundRect(ctx: Ctx, x: number, y: number, w: number, h: number, 
   ctx.arcTo(x, y + h, x, y, rr); ctx.arcTo(x, y, x + w, y, rr);
   ctx.closePath();
 }
+
+// ---------- the finish of an Adventure level ----------
+/**
+ * The finish arch, standing on the ground at (0, 0): two posts either side of the line, a banner
+ * across with the label, and bunting under it.
+ */
+export function artFinishArch(ctx: Ctx, label: string, time = 0): void {
+  for (const x of [-72, 72]) {
+    ctx.beginPath(); ctx.rect(x - 5, -168, 10, 170);
+    const g = ctx.createLinearGradient(x - 5, 0, x + 5, 0); g.addColorStop(0, '#c08a52'); g.addColorStop(1, '#7d5129');
+    ctx.fillStyle = g; ctx.fill(); outline(ctx, 2.2);
+    ctx.beginPath(); ctx.moveTo(x - 7, -168); ctx.lineTo(x, -178); ctx.lineTo(x + 7, -168); ctx.closePath();
+    ctx.fillStyle = '#8a5a2c'; ctx.fill(); outline(ctx, 2);
+  }
+  // bunting
+  ctx.strokeStyle = INK; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(-70, -128); ctx.quadraticCurveTo(0, -108, 70, -128); ctx.stroke();
+  const cols = ['#d52b1e', '#ffffff', '#ffd257'];
+  for (let i = 0; i < 9; i++) {
+    const t = (i + 0.5) / 9, x = -70 + 140 * t, y = -128 + 40 * t * (1 - t) + 0.5;
+    const sway = Math.sin(time * 3 + i) * 1.5;
+    ctx.beginPath(); ctx.moveTo(x - 6, y); ctx.lineTo(x + 6, y); ctx.lineTo(x + sway, y + 12); ctx.closePath();
+    ctx.fillStyle = cols[i % 3]; ctx.fill(); outline(ctx, 1.2);
+  }
+  // the banner, waving a little
+  const wave = (x: number): number => Math.sin(time * 2 + x * 0.05) * 1.5;
+  ctx.beginPath(); ctx.moveTo(-70, -166 + wave(-70));
+  for (let x = -70; x <= 70; x += 10) ctx.lineTo(x, -166 + wave(x));
+  for (let x = 70; x >= -70; x -= 10) ctx.lineTo(x, -136 + wave(x));
+  ctx.closePath();
+  const bg = ctx.createLinearGradient(0, -166, 0, -136); bg.addColorStop(0, '#ff5b45'); bg.addColorStop(1, '#c3211a');
+  ctx.fillStyle = bg; ctx.fill(); outline(ctx, 2.2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); for (let x = -66; x <= 66; x += 6) ctx.lineTo(x, -162 + wave(x)); ctx.stroke();
+  ctx.beginPath(); for (let x = -66; x <= 66; x += 6) ctx.lineTo(x, -140 + wave(x)); ctx.stroke();
+  let sz = 20;
+  ctx.font = `${sz}px ${DISPLAY}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  while (sz > 9 && ctx.measureText(label).width > 120) { sz--; ctx.font = `${sz}px ${DISPLAY}`; }
+  ctx.lineJoin = 'round'; ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.strokeText(label, 0, -150);
+  ctx.fillStyle = '#ffffff'; ctx.fillText(label, 0, -150);
+  // a Swiss flag on each post
+  for (const x of [-72, 72]) {
+    ctx.beginPath(); ctx.rect(x + 4, -176, 16, 12); ctx.fillStyle = '#d52b1e'; ctx.fill(); outline(ctx, 1.4);
+    ctx.fillStyle = '#fff'; ctx.fillRect(x + 10.5, -174, 3, 8); ctx.fillRect(x + 8, -171.5, 8, 3);
+  }
+}
+
+/** One guest at the feast, standing behind the table. */
+interface Guest {
+  x: number; height: number; skin: string; shirt: string;
+  hair: 'beard' | 'bun' | 'kid' | 'pony' | 'moustache'; hairCol: string;
+  phase: number;
+}
+
+const GUESTS: Guest[] = [
+  { x: -96, height: 1, skin: '#f2c9a8', shirt: '#2a3b6a', hair: 'beard', hairCol: '#eeeeee', phase: 0 },
+  { x: -48, height: 0.92, skin: '#e0ac83', shirt: '#3f8a35', hair: 'bun', hairCol: '#b8b8c0', phase: 0.15 },
+  { x: 0, height: 0.72, skin: '#f6d2b5', shirt: '#ffd257', hair: 'kid', hairCol: '#e8b84a', phase: 0.3 },
+  { x: 48, height: 0.98, skin: '#c98b62', shirt: '#d52b1e', hair: 'pony', hairCol: '#5a3418', phase: 0.1 },
+  { x: 96, height: 1.04, skin: '#8d5a3b', shirt: '#f4f1e6', hair: 'moustache', hairCol: '#2a1d18', phase: 0.25 },
+];
+
+const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
+
+/** A guest; arms from 0 (hands on the table) to 1 (raised above the head). */
+function guest(ctx: Ctx, g: Guest, arms: number, cheering: boolean, time: number): void {
+  const top = -40 - 72 * g.height; // the top of the head
+  const bob = cheering ? -arms * 4 : Math.sin(time * 2 + g.phase * 9) * 0.8;
+  ctx.save(); ctx.translate(g.x, bob);
+  const headR = 12, shoulderY = top + 2 * headR + 6;
+  // the arms: shoulder, elbow, hand
+  for (const side of [-1, 1]) {
+    const sx = side * 11, sy = shoulderY + 3;
+    const ex = side * lerp(17, 18, arms), ey = lerp(shoulderY + 16, shoulderY - 12, arms);
+    const hx = side * lerp(15, 17, arms), hy = lerp(-42, top - 12, arms);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.strokeStyle = INK; ctx.lineWidth = 8;
+    ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(ex, ey); ctx.lineTo(hx, hy); ctx.stroke();
+    ctx.strokeStyle = g.shirt; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(ex, ey); ctx.lineTo((ex + hx) / 2, (ey + hy) / 2); ctx.stroke();
+    ctx.strokeStyle = g.skin; ctx.lineWidth = 4.4;
+    ctx.beginPath(); ctx.moveTo((ex + hx) / 2, (ey + hy) / 2); ctx.lineTo(hx, hy); ctx.stroke();
+    ctx.beginPath(); ctx.arc(hx, hy, 3.8, 0, Math.PI * 2); ctx.fillStyle = g.skin; ctx.fill(); outline(ctx, 1.6);
+  }
+  // the body
+  ctx.beginPath(); ctx.moveTo(-14, -30); ctx.lineTo(-13, shoulderY + 4); ctx.quadraticCurveTo(0, shoulderY - 4, 13, shoulderY + 4); ctx.lineTo(14, -30); ctx.closePath();
+  const sg = ctx.createLinearGradient(-14, 0, 14, 0); sg.addColorStop(0, light(g.shirt, 0.15)); sg.addColorStop(1, dark(g.shirt, 0.15));
+  ctx.fillStyle = sg; ctx.fill(); outline(ctx, 2);
+  if (g.hair === 'beard') { // an edelweiss on the herdsman's jacket
+    ctx.fillStyle = '#fff';
+    for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.arc(-6 + Math.cos(i * 1.26) * 2.4, shoulderY + 12 + Math.sin(i * 1.26) * 2.4, 1.4, 0, Math.PI * 2); ctx.fill(); }
+  }
+  // the head and hair
+  const hy0 = top + headR;
+  if (g.hair === 'pony') { ctx.beginPath(); ctx.ellipse(11, hy0 + 4, 5, 9, 0.4, 0, Math.PI * 2); ctx.fillStyle = g.hairCol; ctx.fill(); outline(ctx, 1.6); }
+  ctx.beginPath(); ctx.arc(0, hy0, headR, 0, Math.PI * 2); ctx.fillStyle = g.skin; ctx.fill(); outline(ctx, 2);
+  ctx.fillStyle = g.hairCol;
+  if (g.hair === 'bun') {
+    ctx.beginPath(); ctx.arc(0, hy0 - 2, headR, Math.PI * 1.05, Math.PI * 1.95); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, top - 3, 5.5, 0, Math.PI * 2); ctx.fill(); outline(ctx, 1.6);
+  } else if (g.hair === 'kid') {
+    ctx.beginPath(); ctx.arc(0, hy0 - 2, headR, Math.PI, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-3, top + 1); ctx.quadraticCurveTo(2, top - 7, 5, top); ctx.fill();
+  } else if (g.hair === 'pony' || g.hair === 'moustache') {
+    ctx.beginPath(); ctx.arc(0, hy0 - 2, headR + 0.5, Math.PI * 0.95, Math.PI * 2.05); ctx.fill();
+  } else { // the herdsman: a red cap and a white beard
+    ctx.fillStyle = '#c8281e'; ctx.beginPath(); ctx.arc(0, hy0 - 3, headR, Math.PI, Math.PI * 2); ctx.closePath(); ctx.fill(); outline(ctx, 1.6);
+    ctx.beginPath(); ctx.rect(-headR - 4, hy0 - 5, 8, 3); ctx.fill(); outline(ctx, 1.2);
+    ctx.fillStyle = g.hairCol;
+    ctx.beginPath(); ctx.moveTo(-9, hy0 + 3); ctx.quadraticCurveTo(0, hy0 + 20, 9, hy0 + 3); ctx.quadraticCurveTo(0, hy0 + 8, -9, hy0 + 3); ctx.closePath(); ctx.fill(); outline(ctx, 1.4);
+  }
+  // the face: eyes on the wheel coming from the left; a mouth wide open when cheering
+  const look = cheering ? 0 : -1.4;
+  ctx.fillStyle = INK;
+  for (const ex of [-4.5, 4.5]) { ctx.beginPath(); ctx.ellipse(ex + look, hy0 - 1, 1.5, cheering ? 1.1 : 1.9, 0, 0, Math.PI * 2); ctx.fill(); }
+  if (g.hair === 'bun') { // glasses
+    ctx.strokeStyle = INK; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(-4.5 + look, hy0 - 1, 3, 0, Math.PI * 2); ctx.moveTo(7.5 + look, hy0 - 1); ctx.arc(4.5 + look, hy0 - 1, 3, 0, Math.PI * 2); ctx.stroke();
+  }
+  if (g.hair === 'moustache') { ctx.fillStyle = g.hairCol; ctx.beginPath(); ctx.ellipse(-3, hy0 + 4, 4, 1.8, 0.2, 0, Math.PI * 2); ctx.ellipse(3, hy0 + 4, 4, 1.8, -0.2, 0, Math.PI * 2); ctx.fill(); }
+  if (cheering) { ctx.fillStyle = '#7a2a1f'; ctx.beginPath(); ctx.ellipse(0, hy0 + 6.5, 3.4, 2.4 + arms * 2, 0, 0, Math.PI * 2); ctx.fill(); }
+  else { ctx.strokeStyle = INK; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.arc(0, hy0 + 3, 4, 0.3, Math.PI - 0.3); ctx.stroke(); }
+  ctx.fillStyle = 'rgba(255,120,120,0.35)';
+  ctx.beginPath(); ctx.arc(-7, hy0 + 3, 2.4, 0, Math.PI * 2); ctx.arc(7, hy0 + 3, 2.4, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+/**
+ * The feast at the end of a level, the table centred on (0, 0) on the ground: the guests stand
+ * behind a checked tablecloth with the raclette machine, plates of potatoes and a jar of pickles.
+ * While `cheering`, they all raise their arms together, in time.
+ */
+export function artFeast(ctx: Ctx, time: number, cheering: boolean): void {
+  groundShadow(ctx, 270, 2);
+  const beat = cheering ? 0.5 - 0.5 * Math.cos(time * Math.PI * 2 * 1.6) : 0;
+  for (const g of GUESTS) guest(ctx, g, beat, cheering, time);
+  const W = 130, topY = -40;
+  // the checked cloth
+  ctx.save();
+  ctx.beginPath(); ctx.moveTo(-W, topY); ctx.lineTo(W, topY); ctx.lineTo(W, topY + 26);
+  for (let x = W; x > -W; x -= 20) ctx.quadraticCurveTo(x - 10, topY + 31, x - 20, topY + 26);
+  ctx.closePath();
+  ctx.clip();
+  for (let x = -W; x < W; x += 10) for (let y = topY; y < topY + 34; y += 10) {
+    ctx.fillStyle = (Math.round((x + W) / 10) + Math.round((y - topY) / 10)) % 2 === 0 ? '#d52b1e' : '#ffffff';
+    ctx.fillRect(x, y, 10, 10);
+  }
+  ctx.restore();
+  ctx.beginPath(); ctx.moveTo(-W, topY); ctx.lineTo(W, topY); ctx.lineTo(W, topY + 26);
+  for (let x = W; x > -W; x -= 20) ctx.quadraticCurveTo(x - 10, topY + 31, x - 20, topY + 26);
+  ctx.closePath(); outline(ctx, 2.2);
+  // the legs
+  for (const x of [-W + 12, W - 12]) { ctx.beginPath(); ctx.rect(x - 4, topY + 28, 8, 12); ctx.fillStyle = '#7a4c20'; ctx.fill(); outline(ctx, 1.8); }
+  // plates of potatoes
+  for (const px of [-95, -40, 60, 105]) {
+    ctx.beginPath(); ctx.ellipse(px, topY - 1, 14, 3.5, 0, 0, Math.PI * 2); ctx.fillStyle = '#ffffff'; ctx.fill(); outline(ctx, 1.4);
+    for (const dx of [-4, 4]) { ctx.save(); ctx.translate(px + dx, topY - 4); ctx.scale(0.32, 0.32); artPotato(ctx); ctx.restore(); }
+  }
+  // a jar of pickles
+  ctx.beginPath(); ctx.rect(-72, topY - 16, 12, 16); ctx.fillStyle = 'rgba(200,230,210,0.85)'; ctx.fill(); outline(ctx, 1.4);
+  ctx.fillStyle = '#4f8a2b';
+  for (const [x, y] of [[-69, -48], [-64, -46], [-67, -52]]) { ctx.beginPath(); ctx.ellipse(x, y, 2, 4, 0.2, 0, Math.PI * 2); ctx.fill(); }
+  ctx.beginPath(); ctx.rect(-73, topY - 19, 14, 3); ctx.fillStyle = '#c8281e'; ctx.fill(); outline(ctx, 1.2);
+  // the raclette machine, half a wheel under its grill, the cut face melting
+  ctx.save(); ctx.translate(14, topY);
+  ctx.beginPath(); ctx.rect(-24, -8, 48, 8); ctx.fillStyle = '#3d4450'; ctx.fill(); outline(ctx, 1.8);
+  ctx.beginPath(); ctx.rect(14, -30, 6, 22); ctx.fillStyle = '#5d6472'; ctx.fill(); outline(ctx, 1.6);
+  ctx.beginPath(); ctx.moveTo(-26, -34); ctx.lineTo(24, -34); ctx.lineTo(20, -28); ctx.lineTo(-22, -28); ctx.closePath();
+  ctx.fillStyle = '#2c313b'; ctx.fill(); outline(ctx, 1.8);
+  ctx.fillStyle = '#ff9a3c'; ctx.fillRect(-20, -28, 38, 1.6);
+  ctx.beginPath(); ctx.moveTo(-18, -9); ctx.arc(-6, -9, 12, Math.PI, Math.PI * 2); ctx.closePath();
+  ctx.fillStyle = '#f7d46a'; ctx.fill(); outline(ctx, 1.6);
+  ctx.beginPath(); ctx.arc(-6, -9, 10.8, Math.PI, Math.PI * 2); ctx.strokeStyle = '#c97b2e'; ctx.lineWidth = 2.4; ctx.stroke();
+  const drip = 3 + Math.sin(time * 2) * 1.5;
+  ctx.fillStyle = '#ffd35a';
+  ctx.beginPath(); ctx.moveTo(-17, -10); ctx.lineTo(5, -10); ctx.lineTo(4, -8); ctx.quadraticCurveTo(-2, -8 + drip, -6, -8); ctx.quadraticCurveTo(-12, -8 + drip * 0.6, -17, -8); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+/** A star centred on (0, 0), r its outer radius: gold when earned, dim when not. */
+export function artStar(ctx: Ctx, r: number, filled: boolean): void {
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const a = -Math.PI / 2 + i * Math.PI / 5, d = i % 2 ? r * 0.48 : r;
+    if (i === 0) ctx.moveTo(Math.cos(a) * d, Math.sin(a) * d); else ctx.lineTo(Math.cos(a) * d, Math.sin(a) * d);
+  }
+  ctx.closePath();
+  if (filled) {
+    const g = ctx.createLinearGradient(0, -r, 0, r); g.addColorStop(0, '#fff09a'); g.addColorStop(1, '#f0a92e');
+    ctx.fillStyle = g;
+  } else ctx.fillStyle = 'rgba(42,59,82,0.18)';
+  ctx.fill();
+  ctx.lineJoin = 'round'; ctx.strokeStyle = INK; ctx.lineWidth = Math.max(1.4, r * 0.13); ctx.stroke();
+  if (filled) {
+    ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = r * 0.1; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-r * 0.25, -r * 0.45); ctx.lineTo(-r * 0.05, -r * 0.65); ctx.stroke();
+  }
+}
+
+/** A padlock centred on (0, 0), about 2 × s tall. */
+export function artLock(ctx: Ctx, s: number): void {
+  ctx.beginPath(); ctx.arc(0, -s * 0.35, s * 0.45, Math.PI, 0);
+  ctx.strokeStyle = INK; ctx.lineWidth = s * 0.32; ctx.stroke();
+  ctx.strokeStyle = '#9aa3ae'; ctx.lineWidth = s * 0.16; ctx.stroke();
+  ctx.beginPath(); ctx.rect(-s * 0.7, -s * 0.35, s * 1.4, s * 1.1);
+  const g = ctx.createLinearGradient(0, -s * 0.35, 0, s * 0.75); g.addColorStop(0, '#ffd257'); g.addColorStop(1, '#d8952a');
+  ctx.fillStyle = g; ctx.fill(); outline(ctx, Math.max(1.4, s * 0.12));
+  ctx.fillStyle = INK; ctx.beginPath(); ctx.arc(0, s * 0.1, s * 0.15, 0, Math.PI * 2); ctx.fill();
+  ctx.fillRect(-s * 0.06, s * 0.1, s * 0.12, s * 0.3);
+}

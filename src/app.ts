@@ -10,7 +10,7 @@ import type { Fx } from './render/fx';
 import type { Ui } from './ui';
 
 /** The screens. */
-export type Scene = 'title' | 'play' | 'pause' | 'over' | 'shop' | 'missions' | 'settings';
+export type Scene = 'title' | 'play' | 'pause' | 'over' | 'shop' | 'missions' | 'settings' | 'levels';
 
 /** The end of a run, as the end screen shows it. */
 export interface Summary {
@@ -24,6 +24,26 @@ export interface Summary {
   reason: string;
   /** A cheese the player can now afford, if any. */
   affordable: Cheese | null;
+  /** An Adventure level's result; null after a Quick Game. */
+  level: LevelSummary | null;
+}
+
+/** How an Adventure level went. */
+export interface LevelSummary {
+  /** The level's index, from 0, and its name. */
+  index: number;
+  name: string;
+  won: boolean;
+  /** Each star earned or not: the finish, half the potatoes, no slice lost. */
+  stars: [boolean, boolean, boolean];
+  /** The level's best stars, this run included. */
+  best: number;
+  /** How far the wheel got, 0..1. */
+  progress: number;
+  /** Potatoes laid in the level. */
+  total: number;
+  /** True when there is a next level (and it is now open). */
+  next: boolean;
 }
 
 /** A banner at the top of the screen. */
@@ -54,11 +74,18 @@ export interface App {
   toasts: Toast[];
   /** The scene the settings return to. */
   settingsFrom: Scene;
+  /** The Adventure level being played (from 0), or null for a Quick Game. */
+  level: number | null;
 }
 
 /** What the screens' buttons do. */
 export interface Actions {
-  play(): void;
+  /** A Quick Game: the endless mountain. */
+  quick(): void;
+  /** Plays an Adventure level (from 0), if it is open. */
+  playLevel(i: number): void;
+  /** The level after the one just played, or the level list. */
+  nextLevel(): void;
   pause(): void;
   resume(): void;
   restart(): void;

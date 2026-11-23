@@ -3,11 +3,12 @@
 // buttons through Ui and wires them to the Actions; it never changes the game's state itself.
 
 import type { Actions, App } from './app';
-import { CHEESES, MISSIONS } from './config';
+import { CHEESES, LEVELS, MISSIONS } from './config';
+import { isUnlocked, totalStars } from './game/levels';
 import { describe, missionDef, progressWith } from './game/missions';
 import type { PowerType } from './game/types';
 import { tr } from './i18n';
-import { INK, artGearIcon, artLogo, artPauseIcon, artPill, artPotato, artPowerIcon, artWheel, roundRect } from './render/art';
+import { INK, artGearIcon, artLock, artLogo, artPauseIcon, artPill, artPotato, artPowerIcon, artStar, artWheel, roundRect } from './render/art';
 import { NAVY, font, text } from './ui';
 
 type Ctx = CanvasRenderingContext2D;
@@ -24,6 +25,7 @@ export function drawScreen(ctx: Ctx, app: App, act: Actions): void {
     case 'shop': shop(ctx, app, act); break;
     case 'missions': missions(ctx, app, act); break;
     case 'settings': settings(ctx, app, act); break;
+    case 'levels': levels(ctx, app, act); break;
   }
   toasts(ctx, app);
 }
@@ -97,13 +99,16 @@ function title(ctx: Ctx, app: App, act: Actions): void {
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
 
   const logo = Math.min(62 * u, (W - 40) / 4.6);
-  const bw = Math.min(310 * u, W - p.l - p.r), playH = 66 * u, rowH = 52 * u, gap = 16 * u;
+  const bw = Math.min(470 * u, W - p.l - p.r), playH = 64 * u, rowH = 50 * u, gap = 14 * u;
   const total = logo * 2.3 + gap * 2 + playH + rowH;
   let y = Math.max(p.t + 44 * u, (H - total) / 2);
   ctx.save(); ctx.translate(W / 2 + logo * 0.45, y + logo * 1.05); artLogo(ctx, logo, app.t); ctx.restore();
   y += logo * 2.3 + gap;
-  ui.button(ctx, { id: 'play', x: W / 2 - bw / 2, y, w: bw, h: playH, label: 'JOUER', style: 'primary', action: () => act.play(),
-    icon: (c, cx, cy, s) => { c.fillStyle = '#5a3510'; c.beginPath(); c.moveTo(cx - s * 0.5, cy - s * 0.7); c.lineTo(cx + s * 0.65, cy); c.lineTo(cx - s * 0.5, cy + s * 0.7); c.closePath(); c.fill(); } });
+  const aw = (bw - gap) * 0.54;
+  ui.button(ctx, { id: 'adventure', x: W / 2 - bw / 2, y, w: aw, h: playH, label: 'AVENTURE', style: 'primary', action: () => act.goto('levels'),
+    icon: (c, cx, cy, s) => { c.save(); c.translate(cx, cy + s * 0.15); artStar(c, s * 0.85, true); c.restore(); } });
+  ui.button(ctx, { id: 'quick', x: W / 2 - bw / 2 + aw + gap, y, w: bw - aw - gap, h: playH, label: 'PARTIE RAPIDE', action: () => act.quick(),
+    icon: (c, cx, cy, s) => { c.fillStyle = NAVY; c.beginPath(); c.moveTo(cx - s * 0.5, cy - s * 0.7); c.lineTo(cx + s * 0.65, cy); c.lineTo(cx - s * 0.5, cy + s * 0.7); c.closePath(); c.fill(); } });
   y += playH + gap;
   const hw = (bw - gap) / 2;
   ui.button(ctx, { id: 'shop', x: W / 2 - bw / 2, y, w: hw, h: rowH, label: 'BOUTIQUE', action: () => act.goto('shop'), icon: potatoIcon });
@@ -127,8 +132,9 @@ const POWER_COL: Record<PowerType, string> = { shield: '#ffd35a', magnet: '#ff6a
 
 function hud(ctx: Ctx, app: App, act: Actions, buttons = true): void {
   const { W, H, u } = app.view, p = pad(app), run = app.run, m = run.m;
-  // the distance and the potatoes, on dark pills
-  const dist = `${run.meters} m`;
+  // the distance (the level in the Adventure) and the potatoes, on dark pills
+  const dist = run.level ? tr(`NIVEAU ${(app.level ?? 0) + 1}`) : `${run.meters} m`;
+  if (run.level) progressBar(ctx, app);
   ctx.font = font(24 * u, true);
   const dw = Math.max(110 * u, ctx.measureText(dist).width + 36 * u);
   artPill(ctx, p.l, p.t + 18 * u, dw, 38 * u);
@@ -170,6 +176,19 @@ function hud(ctx: Ctx, app: App, act: Actions, buttons = true): void {
   }
 }
 
+/** The way to the finish line, top centre: the wheel moving along, the flag at the end. */
+function progressBar(ctx: Ctx, app: App): void {
+  const { W, u } = app.view, p = pad(app), run = app.run;
+  const w = Math.min(360 * u, W * 0.36), x = W / 2 - w / 2, y = p.t + 18 * u, h = 12 * u;
+  roundRect(ctx, x, y - h / 2, w, h, h / 2); ctx.fillStyle = 'rgba(25,40,60,0.55)'; ctx.fill();
+  roundRect(ctx, x, y - h / 2, Math.max(h, w * run.progress), h, h / 2); ctx.fillStyle = '#ffd257'; ctx.fill();
+  roundRect(ctx, x, y - h / 2, w, h, h / 2); ctx.strokeStyle = INK; ctx.lineWidth = 2 * u; ctx.stroke();
+  // the flag at the end
+  ctx.strokeStyle = INK; ctx.lineWidth = 2.2 * u; ctx.beginPath(); ctx.moveTo(x + w, y + h); ctx.lineTo(x + w, y - 18 * u); ctx.stroke();
+  for (let c = 0; c < 3; c++) for (let r = 0; r < 2; r++) { ctx.fillStyle = (c + r) % 2 ? '#ffffff' : INK; ctx.fillRect(x + w + c * 4 * u, y - 18 * u + r * 4 * u, 4 * u, 4 * u); }
+  ctx.save(); ctx.translate(x + w * run.progress, y); artWheel(ctx, run.cheese.id, 10 * u, run.m.portions, run.m.maxPortions, run.m.a); ctx.restore();
+}
+
 // ---------- pause ----------
 function column(ctx: Ctx, app: App, items: { id: string; label: string; action: () => void; style?: 'primary' | 'secondary' }[], top: number): void {
   const { W, u } = app.view, bw = Math.min(290 * u, W - 40), bh = 52 * u, gap = 14 * u;
@@ -194,6 +213,7 @@ function over(ctx: Ctx, app: App, act: Actions): void {
   const { W, H, u } = app.view, s = app.summary, ui = app.ui;
   dim(ctx, app, Math.min(0.55, app.sceneT * 2));
   if (!s) return;
+  if (s.level) { levelOver(ctx, app, act); return; }
   const lines = s.completed.length;
   const pw = Math.min(470 * u, W - 24), ph = Math.min(H - 20, (262 + lines * 26 + (s.affordable ? 26 : 0)) * u);
   const px = W / 2 - pw / 2, py = H / 2 - ph / 2;
@@ -224,6 +244,90 @@ function over(ctx: Ctx, app: App, act: Actions): void {
   ui.button(ctx, { id: 'again', x: px + 20 * u, y: by, w: bw, h: bh, label: 'REJOUER', style: 'primary', action: () => act.restart() });
   ui.button(ctx, { id: 'menu', x: px + 20 * u + bw + gap, y: by, w: bw, h: bh, label: 'MENU', action: () => act.menu() });
   if (s.affordable) ui.button(ctx, { id: 'shop', x: px + 20 * u + 2 * (bw + gap), y: by, w: bw, h: bh, label: 'BOUTIQUE', action: () => { act.menu(); act.goto('shop'); }, icon: potatoIcon });
+}
+
+/** The potatoes of the run, centred on (cx, y): "+12", or "+12 / 40" in a level. */
+function potatoesLine(ctx: Ctx, u: number, cx: number, y: number, n: number, total = 0): void {
+  const pt = total ? `+${n} / ${total}` : `+${n}`;
+  ctx.font = font(26 * u, true);
+  const tw = ctx.measureText(pt).width;
+  potato(ctx, cx - tw / 2 - 16 * u, y, 11 * u);
+  text(ctx, pt, cx + 8 * u, y + 1, 26 * u, { display: true, raw: true });
+}
+
+/** The end of an Adventure level: the stars and the feast, or how far the wheel got. */
+function levelOver(ctx: Ctx, app: App, act: Actions): void {
+  const { W, H, u } = app.view, s = app.summary!, lv = s.level!, ui = app.ui;
+  const lines = s.completed.length;
+  const pw = Math.min(480 * u, W - 24), ph = Math.min(H - 16, ((lv.won ? 300 : 250) + lines * 24) * u);
+  const px = W / 2 - pw / 2, py = H / 2 - ph / 2;
+  panel(ctx, px, py, pw, ph, u);
+  let y = py + 34 * u;
+  if (lv.won) text(ctx, 'BON APPÉTIT !', W / 2, y, 38 * u, { display: true, color: '#ffd257', outline: INK, outlineW: 7 * u });
+  else text(ctx, s.reason, W / 2, y, 26 * u, { display: true, maxW: pw - 30 * u });
+  y += 36 * u;
+  text(ctx, `${tr(`NIVEAU ${lv.index + 1}`)} — ${tr(lv.name)}`, W / 2, y, 17 * u, { weight: 700, color: 'rgba(42,59,82,0.75)', maxW: pw - 30 * u, raw: true });
+  y += 22 * u;
+  if (lv.won) {
+    // the stars, one after the other
+    const labels = ['Arrivé au repas', 'La moitié des patates', 'Sans perdre une part'];
+    for (let k = 0; k < 3; k++) {
+      const sx = W / 2 + (k - 1) * pw * 0.3, t = Math.max(0, Math.min(1, (app.sceneT - 0.3 - k * 0.35) * 4));
+      const pop = lv.stars[k] ? 1 + Math.sin(t * Math.PI) * 0.35 : 1;
+      ctx.save(); ctx.translate(sx, y + 34 * u); ctx.scale(pop, pop); artStar(ctx, 26 * u, lv.stars[k] && t > 0); ctx.restore();
+      text(ctx, labels[k], sx, y + 76 * u, 13 * u, { weight: 700, color: lv.stars[k] ? NAVY : 'rgba(42,59,82,0.45)', maxW: pw * 0.3 - 6 * u });
+    }
+    y += 104 * u;
+  } else {
+    const bw = pw - 80 * u;
+    bar(ctx, W / 2 - bw / 2, y + 10 * u, bw, 16 * u, lv.progress, '#ffd257');
+    text(ctx, `Arrivée à ${Math.round(lv.progress * 100)} %`, W / 2, y + 44 * u, 17 * u, { weight: 700 });
+    y += 72 * u;
+  }
+  potatoesLine(ctx, u, W / 2, y, s.potatoes, lv.total);
+  y += 30 * u;
+  for (const c of s.completed) {
+    text(ctx, `✓ ${tr(describe(c.def))}  +${c.def.reward}`, W / 2, y, 15 * u, { weight: 700, color: GREEN, maxW: pw - 30 * u, raw: true });
+    y += 24 * u;
+  }
+  const bh = 52 * u, by = py + ph - bh - 20 * u, gap = 12 * u;
+  const buttons: { id: string; label: string; action: () => void; primary?: boolean }[] = lv.won
+    ? [...(lv.next ? [{ id: 'next', label: 'SUIVANT', action: () => act.nextLevel(), primary: true }] : []),
+      { id: 'again', label: 'REJOUER', action: () => act.restart(), primary: !lv.next },
+      { id: 'levels', label: 'NIVEAUX', action: () => act.back() }]
+    : [{ id: 'again', label: 'RECOMMENCER', action: () => act.restart(), primary: true },
+      { id: 'levels', label: 'NIVEAUX', action: () => act.back() }];
+  const bw = (pw - 40 * u - gap * (buttons.length - 1)) / buttons.length;
+  buttons.forEach((b, i) => ui.button(ctx, { id: b.id, x: px + 20 * u + i * (bw + gap), y: by, w: bw, h: bh, label: b.label,
+    style: b.primary ? 'primary' : 'secondary', action: b.action }));
+}
+
+// ---------- the Adventure's levels ----------
+function levels(ctx: Ctx, app: App, act: Actions): void {
+  const { W, H, u } = app.view, p = pad(app), save = app.save, ui = app.ui;
+  dim(ctx, app, 0.35);
+  const top = header(ctx, app, act, 'AVENTURE');
+  const got = totalStars(save.stars), all = LEVELS.length * 3;
+  const tw = text(ctx, tr(`${got} étoiles sur ${all}`), W / 2 + 12 * u, top - 1 * u, 17 * u, { weight: 700, color: '#fff', outline: 'rgba(15,30,50,0.7)', outlineW: 4 * u, raw: true });
+  ctx.save(); ctx.translate(W / 2 + 12 * u - tw / 2 - 16 * u, top - 2 * u); artStar(ctx, 11 * u, true); ctx.restore();
+  const cols = W > H * 1.15 ? 5 : 2, rows = Math.ceil(LEVELS.length / cols);
+  const gap = 12 * u, gridTop = top + 22 * u;
+  const cw = Math.min(150 * u, (W - p.l - p.r - gap * (cols - 1)) / cols);
+  const ch = Math.min(118 * u, (H - gridTop - p.b - gap * (rows - 1)) / rows);
+  const x0 = W / 2 - (cols * cw + (cols - 1) * gap) / 2;
+  // the level to play next: the first one open and not done
+  const nextUp = LEVELS.findIndex((_, i) => isUnlocked(save.stars, i) && !(save.stars[i] > 0));
+  LEVELS.forEach((lv, i) => {
+    const x = x0 + (i % cols) * (cw + gap), y = gridTop + Math.floor(i / cols) * (ch + gap);
+    const open = isUnlocked(save.stars, i), stars = save.stars[i] ?? 0;
+    ui.button(ctx, { id: `level${i}`, x, y, w: cw, h: ch, label: ' ', style: i === nextUp ? 'primary' : 'secondary', disabled: !open,
+      action: () => act.playLevel(i) });
+    const cx = x + cw / 2;
+    if (!open) { ctx.save(); ctx.translate(cx, y + ch * 0.4); artLock(ctx, 14 * u); ctx.restore(); }
+    else text(ctx, String(i + 1), cx, y + ch * 0.3, 34 * u, { display: true, color: i === nextUp ? '#5a3510' : NAVY, raw: true });
+    text(ctx, lv.name, cx, y + ch * 0.6, 13 * u, { weight: 700, color: open ? NAVY : 'rgba(42,59,82,0.6)', maxW: cw - 12 * u });
+    for (let k = 0; k < 3; k++) { ctx.save(); ctx.translate(cx + (k - 1) * 20 * u, y + ch * 0.82); artStar(ctx, 8 * u, k < stars); ctx.restore(); }
+  });
 }
 
 // ---------- the shop ----------

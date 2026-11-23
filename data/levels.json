@@ -1,0 +1,22 @@
+[
+  { "name": "Le pré du village", "seed": 1001, "length": 500, "difficulty": 0,
+    "obstacles": ["rock"], "features": { "normal": 0.7, "kicker": 0.1, "cliff": 0, "flat": 0.2 }, "gap": [700, 1100] },
+  { "name": "Les barrières", "seed": 1002, "length": 650, "difficulty": 0.1,
+    "obstacles": ["rock", "fence"], "features": { "normal": 0.65, "kicker": 0.12, "cliff": 0.05, "flat": 0.18 }, "gap": [600, 1000] },
+  { "name": "La forêt de sapins", "seed": 1103, "length": 800, "difficulty": 0.2,
+    "obstacles": ["rock", "fence", "tree", "tree"], "features": { "normal": 0.6, "kicker": 0.14, "cliff": 0.08, "flat": 0.18 }, "gap": [560, 950] },
+  { "name": "Les bosses", "seed": 1004, "length": 950, "difficulty": 0.3,
+    "obstacles": ["rock", "fence", "tree"], "features": { "normal": 0.5, "kicker": 0.22, "cliff": 0.1, "flat": 0.18 }, "gap": [540, 900] },
+  { "name": "Les vaches d'Hérens", "seed": 1005, "length": 1100, "difficulty": 0.4,
+    "obstacles": ["rock", "tree", "cow", "cow"], "features": { "normal": 0.55, "kicker": 0.15, "cliff": 0.12, "flat": 0.18 }, "gap": [520, 880] },
+  { "name": "La falaise", "seed": 1006, "length": 1250, "difficulty": 0.5,
+    "obstacles": ["rock", "fence", "tree", "cow"], "features": { "normal": 0.45, "kicker": 0.15, "cliff": 0.24, "flat": 0.16 }, "gap": [500, 850] },
+  { "name": "Le col", "seed": 1007, "length": 1400, "difficulty": 0.6,
+    "obstacles": ["fence", "tree", "tree", "cow"], "features": { "normal": 0.5, "kicker": 0.18, "cliff": 0.16, "flat": 0.16 }, "gap": [460, 800] },
+  { "name": "La grande descente", "seed": 1008, "length": 1600, "difficulty": 0.75,
+    "obstacles": ["rock", "fence", "tree", "cow", "cow"], "features": { "normal": 0.55, "kicker": 0.16, "cliff": 0.15, "flat": 0.14 }, "gap": [430, 760] },
+  { "name": "L'alpage des reines", "seed": 1009, "length": 1800, "difficulty": 0.85,
+    "obstacles": ["fence", "tree", "cow", "cow", "cow"], "features": { "normal": 0.5, "kicker": 0.18, "cliff": 0.18, "flat": 0.14 }, "gap": [420, 720] },
+  { "name": "Le banquet", "seed": 1210, "length": 2000, "difficulty": 1,
+    "obstacles": ["rock", "fence", "tree", "cow", "cow"], "features": { "normal": 0.5, "kicker": 0.18, "cliff": 0.18, "flat": 0.14 }, "gap": [400, 700] }
+]

@@ -19,7 +19,8 @@ async function open(page: Page, query: string): Promise<string[]> {
 }
 
 type AppView = { scene: string; run: { meters: number; state: string; tutorial: boolean; m: { x: number; vx: number };
-  terrain: { obstacles: { x: number; hit: boolean; passed: boolean }[] } }; save: { bank: number; best: number; runs: number; tutorialDone: boolean } };
+  terrain: { obstacles: { x: number; hit: boolean; passed: boolean }[] } }; save: { bank: number; best: number; runs: number; tutorialDone: boolean };
+  ui: { buttons: { id: string; action: () => void; disabled?: boolean }[] } };
 
 test('boots to the title screen with no errors @boot', async ({ page }) => {
   const errors = await open(page, 'manual=1');
@@ -30,10 +31,10 @@ test('boots to the title screen with no errors @boot', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test('the play button starts a run that rolls down the mountain', async ({ page }) => {
+test('the Quick Game button starts a run that rolls down the mountain', async ({ page }) => {
   await open(page, 'manual=1&seed=5&tutorial=0');
   const r = await page.evaluate(() => {
-    const g = window.game!; g.step(30); g.press('Enter'); g.step(120);
+    const g = window.game!; g.step(30); (g.state as AppView).ui.buttons.find(b => b.id === 'quick')!.action(); g.step(120);
     const a = g.state as AppView;
     return { scene: g.scene, meters: a.run.meters, state: a.run.state };
   });
@@ -44,7 +45,7 @@ test('the play button starts a run that rolls down the mountain', async ({ page 
 test('a broken wheel ends the run, pays its potatoes and saves', async ({ page }) => {
   await open(page, 'manual=1&seed=5&tutorial=0');
   const r = await page.evaluate(() => {
-    const g = window.game!; g.step(30); g.press('Enter');
+    const g = window.game!; g.step(30); (g.state as AppView).ui.buttons.find(b => b.id === 'quick')!.action();
     for (let i = 0; i < 60 * 120 && g.scene === 'play'; i++) g.step(1, false);
     g.step(10);
     const a = g.state as AppView;
@@ -59,7 +60,7 @@ test('a broken wheel ends the run, pays its potatoes and saves', async ({ page }
 test('the first run is the tutorial, and it is remembered once done', async ({ page }) => {
   await open(page, 'manual=1&seed=5');
   const r = await page.evaluate(() => {
-    const g = window.game!; g.step(30); g.press('Enter');
+    const g = window.game!; g.step(30); (g.state as AppView).ui.buttons.find(b => b.id === 'quick')!.action();
     const a = g.state as AppView & { run: { hint: string | null } };
     const first = a.run.tutorial;
     for (let i = 0; i < 60 * 40 && a.run.tutorial; i++) { g.hold('Space', !!a.run.hint); g.step(1, false); }
@@ -79,4 +80,25 @@ test('a tap on the settings gear opens the settings, and a tap on a row changes 
   const row = await page.evaluate(() => (window.game!.state as { ui: { buttons: { id: string; x: number; y: number; w: number; h: number }[] } }).ui.buttons.find(b => b.id === 'music')!);
   await page.mouse.click(row.x + row.w / 2, row.y + row.h / 2);
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('raclette_rush') || '{}').settings?.music)).toBe(false);
+});
+
+test('the Adventure: level 2 is locked until level 1 is finished, which gives stars', async ({ page }) => {
+  await open(page, 'manual=1&tutorial=0&level=1');
+  const r = await page.evaluate(() => {
+    const g = window.game!;
+    type Lv = AppView & { run: { finishX: number; m: { x: number; y: number; vx: number; r: number }; terrain: { groundAt(x: number): number } };
+      save: { stars: number[] }; summary: { level: { won: boolean; best: number } | null } };
+    const a = g.state as Lv;
+    // the wheel put just before the line, then the feast plays out
+    a.run.terrain.obstacles.length = 0;
+    a.run.m.x = a.run.finishX - 150; a.run.m.y = a.run.terrain.groundAt(a.run.m.x) - a.run.m.r; a.run.m.vx = 500;
+    for (let i = 0; i < 60 * 6 && g.scene === 'play'; i++) g.step(1, false);
+    g.step(30);
+    const end = { scene: g.scene, won: a.summary.level?.won, stars: a.save.stars[0] };
+    a.ui.buttons.find(b => b.id === 'levels')!.action(); g.step(30);
+    const lv = (id: string): boolean | undefined => a.ui.buttons.find(b => b.id === id)?.disabled;
+    return { ...end, scene2: g.scene, level2Locked: lv('level1'), level3Locked: lv('level2') };
+  });
+  expect(r).toEqual({ scene: 'over', won: true, stars: expect.any(Number), scene2: 'levels', level2Locked: false, level3Locked: true });
+  expect(r.stars).toBeGreaterThanOrEqual(1);
 });

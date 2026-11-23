@@ -61,7 +61,10 @@
     "firstPower": 2500,
     "powerGapMin": 1800,
     "powerGapMax": 3500,
-    "landingZone": 700
+    "landingZone": 700,
+    "runUp": 300,
+    "minGapAfterTall": 800,
+    "minGapAfterShort": 480
   },
   "powers": {
     "magnetTime": 8,
@@ -76,6 +79,13 @@
     "end": 2900,
     "hintDistance": 190,
     "slowMotion": 0.2
+  },
+  "finish": {
+    "approach": 600,
+    "clearBefore": 400,
+    "tableGap": 520,
+    "stopBefore": 175,
+    "celebrate": 2.8
   },
   "unitsPerMeter": 10,
   "comboWindow": 0.6

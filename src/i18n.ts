@@ -50,6 +50,14 @@ export const EN: Record<string, string> = {
   // the missions
   'Attrape un bonus': 'Grab a bonus',
   'Les missions accomplies rapportent des pommes de terre à la fin de la descente': 'Completed missions pay potatoes at the end of the run',
+  // the Adventure
+  'AVENTURE': 'ADVENTURE', 'PARTIE RAPIDE': 'QUICK GAME', 'NIVEAUX': 'LEVELS', 'SUIVANT': 'NEXT',
+  'ARRIVÉE': 'FINISH', 'BON APPÉTIT !': 'ENJOY YOUR MEAL!', 'Bon appétit !': 'Enjoy your meal!',
+  'Hourra !': 'Hooray!', 'Bravo !': 'Bravo!', 'À table !': 'Dinner time!', 'Youpi !': 'Yippee!',
+  'Arrivé au repas': 'Made it to dinner', 'La moitié des patates': 'Half the potatoes', 'Sans perdre une part': 'No slice lost',
+  'Le pré du village': 'The Village Meadow', 'Les barrières': 'The Fences', 'La forêt de sapins': 'The Fir Forest',
+  'Les bosses': 'The Bumps', "Les vaches d'Hérens": 'The Hérens Cows', 'La falaise': 'The Cliff', 'Le col': 'The Pass',
+  'La grande descente': 'The Long Descent', "L'alpage des reines": 'The Queens\' Pasture', 'Le banquet': 'The Banquet',
   // the settings
   'Sons': 'Sounds', 'Musique': 'Music', 'Vibrations': 'Vibration', 'Langue': 'Language', 'Revoir le tutoriel': 'Replay the tutorial',
   'Activés': 'On', 'Désactivés': 'Off', 'Activée': 'On', 'Désactivée': 'Off', 'Activées': 'On', 'Désactivées': 'Off',
@@ -61,6 +69,10 @@ type Rule = [RegExp, (m: RegExpMatchArray) => string];
 /** Sentences with numbers or names in them. */
 const PATTERNS: Rule[] = [
   [/^Record : (\d+) m$/, m => `Best: ${m[1]} m`],
+  [/^NIVEAU (\d+)$/, m => `LEVEL ${m[1]}`],
+  [/^(\d+) étoiles sur (\d+)$/, m => `${m[1]} stars of ${m[2]}`],
+  [/^Arrivée à (\d+) %$/, m => `${m[1]}% of the way`],
+  [/^Termine le niveau (\d+) pour le débloquer$/, m => `Finish level ${m[1]} to unlock it`],
   [/^ACHETER (\d+)$/, m => `BUY ${m[1]}`],
   [/^Il te manque (\d+)$/, m => `${m[1]} more needed`],
   [/^(.+) : à toi !$/, m => `${tr(m[1])} is yours!`],

@@ -13,14 +13,14 @@ Every command runs in this folder.
 | `npm run test:unit` | Vitest: terrain, run, missions, save, translations |
 | `npm run test:e2e` | Playwright on the single file: boot, a run, the tutorial, the settings |
 | `npm run smoke` | The boot check alone |
-| `npm run sim` | The balance bot: distance and potatoes per run |
+| `npm run sim` | The balance bot: distance and potatoes per Quick Game, and how it does on each Adventure level |
 | `npx playwright test --config tools/shots.config.ts` | Screenshots of every screen into `qa/evidence/` |
 | `npm run art` | The art sheet and a sample scene, as PNG, into `design/art/` |
 
 ## Layout
 
 ```text
-data/         every gameplay value: config.json, cheeses.json, missions.json
+data/         every gameplay value: config.json, levels.json, cheeses.json, missions.json
 design/       game-brief.md, art/ (the art sheets)
 src/game/     the rules, with no drawing: terrain, run, missions, save, rng
 src/render/   art.ts (every shape, Canvas 2D paths, no image files), world.ts, fx.ts
@@ -33,4 +33,4 @@ tools/        the balance bot, the screenshots
 ## Address options (for tests)
 
 `?manual=1` (only `window.game.step()` moves the game), `?seed=<n>`, `?tutorial=0|1`,
-`?lang=fr|en`, `?scene=shop|missions|settings|play`.
+`?lang=fr|en`, `?scene=shop|missions|settings|levels|play`, `?level=<n>` (straight into Adventure level n, open or not).
