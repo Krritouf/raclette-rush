@@ -102,3 +102,43 @@ test('the Adventure: level 2 is locked until level 1 is finished, which gives st
   expect(r).toEqual({ scene: 'over', won: true, stars: expect.any(Number), scene2: 'levels', level2Locked: false, level3Locked: true });
   expect(r.stars).toBeGreaterThanOrEqual(1);
 });
+
+/** The centre of a button of the screen on show. */
+async function buttonCentre(page: Page, id: string): Promise<{ x: number; y: number } | null> {
+  return page.evaluate(i => {
+    const b = (window.game!.state as AppView & { ui: { buttons: { id: string; x: number; y: number; w: number; h: number }[] } }).ui.buttons.find(bb => bb.id === i);
+    return b ? { x: b.x + b.w / 2, y: b.y + b.h / 2 } : null;
+  }, id);
+}
+
+test('the full-screen button puts the game full screen where the browser allows it (Android)', async ({ page }) => {
+  const errors = await open(page, 'tutorial=0');
+  await page.waitForTimeout(500);
+  const at = await buttonCentre(page, 'fullscreen');
+  expect(at).not.toBeNull();
+  await page.mouse.click(at!.x, at!.y);
+  await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(true);
+  expect(errors).toEqual([]);
+});
+
+test.describe('on an iPhone', () => {
+  test.use({ userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1' });
+
+  test('the full-screen button explains how to add the game to the home screen', async ({ page }) => {
+    // Safari on iPhone has no Fullscreen API for a page, prefixed or not
+    await page.addInitScript(() => {
+      for (const k of ['fullscreenEnabled', 'webkitFullscreenEnabled']) Object.defineProperty(Document.prototype, k, { get: () => false });
+    });
+    await open(page, 'tutorial=0');
+    await page.waitForTimeout(500);
+    const at = await buttonCentre(page, 'fullscreen');
+    expect(at).not.toBeNull();
+    await page.mouse.click(at!.x, at!.y);
+    await expect.poll(() => page.evaluate(() => window.game!.scene)).toBe('homescreen');
+    expect(await page.evaluate(() => !!document.fullscreenElement)).toBe(false);
+    await page.waitForTimeout(400);
+    const ok = await buttonCentre(page, 'ok');
+    await page.mouse.click(ok!.x, ok!.y);
+    await expect.poll(() => page.evaluate(() => window.game!.scene)).toBe('title');
+  });
+});

@@ -1,4 +1,4 @@
-// Opens the built art sheet and writes its two canvases as PNG into design/art/.
+// Opens the built art sheet and writes its canvases as PNG: the sheets into design/art/, the app icons into public/.
 import { test } from '@playwright/test';
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -15,6 +15,11 @@ test('renders the art sheet', async ({ page }) => {
     const data = await page.evaluate(i => (document.getElementById(i) as HTMLCanvasElement).toDataURL('image/png'), id);
     const name = id === 'sheet' ? `planche-${version}.png` : id === 'scene' ? `scene-${version}.png` : `convives-${friends}.png`;
     writeFileSync(resolve('design/art', name), Buffer.from(data.split(',')[1], 'base64'));
+  }
+  // the app icons, for a web app added to the home screen (public/, copied into dist/)
+  for (const n of [512, 180]) {
+    const data = await page.evaluate(i => (document.getElementById(i) as HTMLCanvasElement).toDataURL('image/png'), `icon${n}`);
+    writeFileSync(resolve('public', `icon-${n}.png`), Buffer.from(data.split(',')[1], 'base64'));
   }
   if (errors.length) throw new Error(errors.join('\n'));
 });

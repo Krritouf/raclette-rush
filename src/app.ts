@@ -1,6 +1,7 @@
 // The game's state between frames, and the actions the screens can call. main.ts owns both;
 // screens.ts draws from the state and wires its buttons to the actions.
 
+import type { FullscreenWay } from './fullscreen';
 import type { Completed } from './game/missions';
 import type { Run } from './game/run';
 import type { SaveData } from './game/save';
@@ -10,7 +11,7 @@ import type { Fx } from './render/fx';
 import type { Ui } from './ui';
 
 /** The screens. */
-export type Scene = 'title' | 'play' | 'pause' | 'over' | 'shop' | 'missions' | 'settings' | 'levels';
+export type Scene = 'title' | 'play' | 'pause' | 'over' | 'shop' | 'missions' | 'settings' | 'levels' | 'homescreen';
 
 /** The end of a run, as the end screen shows it. */
 export interface Summary {
@@ -76,6 +77,8 @@ export interface App {
   settingsFrom: Scene;
   /** The Adventure level being played (from 0), or null for a Quick Game. */
   level: number | null;
+  /** How this device goes full screen, and whether it is now. */
+  fullscreen: { way: FullscreenWay; on: boolean };
 }
 
 /** What the screens' buttons do. */
@@ -96,4 +99,6 @@ export interface Actions {
   shopAction(): void;
   toggle(setting: 'sound' | 'music' | 'vibrate' | 'lang'): void;
   replayTutorial(): void;
+  /** Full screen on or off; on an iPhone, the help to add the game to the home screen. */
+  fullscreen(): void;
 }

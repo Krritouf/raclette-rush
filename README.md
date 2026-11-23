@@ -15,7 +15,7 @@ Every command runs in this folder.
 | `npm run smoke` | The boot check alone |
 | `npm run sim` | The balance bot: distance and potatoes per Quick Game, and how it does on each Adventure level |
 | `npx playwright test --config tools/shots.config.ts` | Screenshots of every screen into `qa/evidence/` |
-| `npm run art` | The art sheet and a sample scene, as PNG, into `design/art/` |
+| `npm run art` | The art sheets as PNG into `design/art/`, and the app icons into `public/` |
 
 ## Layout
 
@@ -27,7 +27,8 @@ src/render/   art.ts (every shape, Canvas 2D paths, no image files), world.ts, f
 src/screens.ts, src/ui.ts   the menus and the HUD
 src/main.ts   the loop, input, sound and save, put together
 tests/        unit/ (Vitest) and integration/ (Playwright)
-tools/        the balance bot, the screenshots
+public/       the web app's manifest and icons (folder build only): added to the home screen, the game opens full screen
+tools/        the balance bot, the screenshots, the art sheets
 ```
 
 ## Address options (for tests)

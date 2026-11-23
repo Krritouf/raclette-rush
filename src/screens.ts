@@ -26,6 +26,7 @@ export function drawScreen(ctx: Ctx, app: App, act: Actions): void {
     case 'missions': missions(ctx, app, act); break;
     case 'settings': settings(ctx, app, act); break;
     case 'levels': levels(ctx, app, act); break;
+    case 'homescreen': title(ctx, app, act); homescreen(ctx, app, act); break;
   }
   toasts(ctx, app);
 }
@@ -117,6 +118,11 @@ function title(ctx: Ctx, app: App, act: Actions): void {
 
   const gs = 48 * u;
   ui.button(ctx, { id: 'settings', x: W - p.r - gs, y: p.t, w: gs, h: gs, label: '', style: 'ghost', action: () => act.goto('settings'), icon: artGearIcon });
+  if (app.fullscreen.way !== 'none') {
+    const on = app.fullscreen.on;
+    ui.button(ctx, { id: 'fullscreen', x: W - p.r - 2 * gs - 12 * u, y: p.t, w: gs, h: gs, label: '', style: 'ghost',
+      action: () => act.fullscreen(), icon: (c, cx, cy, s) => fullscreenIcon(c, cx, cy, s, on) });
+  }
   bank(ctx, app, p.l, p.t + gs / 2, app.save.bank, 'left');
   if (app.save.best > 0) {
     const s = tr(`Record : ${app.save.best} m`);
@@ -125,6 +131,55 @@ function title(ctx: Ctx, app: App, act: Actions): void {
     artPill(ctx, p.l, cy, w, 34 * u);
     text(ctx, s, p.l + w / 2, cy + 1, 18 * u, { display: true, color: '#fff', raw: true });
   }
+}
+
+/** Four corners pointing out (go full screen) or in (leave it). */
+function fullscreenIcon(ctx: Ctx, cx: number, cy: number, s: number, on: boolean): void {
+  ctx.strokeStyle = NAVY; ctx.lineWidth = s * 0.26; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  const a = s * 0.85, b = s * 0.35;
+  for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+    const x = cx + sx * (on ? b : a), y = cy + sy * (on ? b : a), d = on ? 1 : -1; // the corner's elbow, its arms pointing in or out
+    ctx.beginPath(); ctx.moveTo(x + sx * d * (a - b), y); ctx.lineTo(x, y); ctx.lineTo(x, y + sy * d * (a - b)); ctx.stroke();
+  }
+}
+
+/** Safari's share button: a box with an arrow going up out of it. */
+function shareIcon(ctx: Ctx, cx: number, cy: number, s: number): void {
+  ctx.strokeStyle = '#1a73e8'; ctx.lineWidth = s * 0.16; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.beginPath(); ctx.moveTo(cx - s * 0.35, cy - s * 0.15); ctx.lineTo(cx - s * 0.6, cy - s * 0.15); ctx.lineTo(cx - s * 0.6, cy + s * 0.85);
+  ctx.lineTo(cx + s * 0.6, cy + s * 0.85); ctx.lineTo(cx + s * 0.6, cy - s * 0.15); ctx.lineTo(cx + s * 0.35, cy - s * 0.15); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx, cy + s * 0.35); ctx.lineTo(cx, cy - s * 0.9); ctx.moveTo(cx - s * 0.32, cy - s * 0.6); ctx.lineTo(cx, cy - s * 0.92); ctx.lineTo(cx + s * 0.32, cy - s * 0.6); ctx.stroke();
+}
+
+/** On an iPhone: how to get the game full screen (Safari does not allow it): add it to the home screen. */
+function homescreen(ctx: Ctx, app: App, act: Actions): void {
+  const { W, H, u } = app.view;
+  dim(ctx, app, 0.6);
+  const pw = Math.min(520 * u, W - 24), ph = Math.min(H - 20, 300 * u);
+  const px = W / 2 - pw / 2, py = H / 2 - ph / 2;
+  panel(ctx, px, py, pw, ph, u);
+  let y = py + 32 * u;
+  text(ctx, 'JOUER EN PLEIN ÉCRAN', W / 2, y, 26 * u, { display: true, maxW: pw - 30 * u });
+  y += 30 * u;
+  text(ctx, "Sur iPhone, Safari ne permet pas le plein écran : ajoute le jeu à ton écran d’accueil.", W / 2, y, 14 * u,
+    { weight: 600, color: 'rgba(42,59,82,0.8)', maxW: pw - 30 * u });
+  const steps: [string, ((c: Ctx, cx: number, cy: number, s: number) => void) | null][] = [
+    ['Touche le bouton Partager de Safari', shareIcon],
+    ["Choisis « Sur l’écran d’accueil »", null],
+    ['Lance Raclette Rush depuis son icône', null],
+  ];
+  y += 36 * u;
+  steps.forEach(([s, icon], i) => {
+    const x = px + 34 * u;
+    ctx.beginPath(); ctx.arc(x, y, 13 * u, 0, Math.PI * 2); ctx.fillStyle = '#ffd257'; ctx.fill();
+    ctx.strokeStyle = INK; ctx.lineWidth = 2 * u; ctx.stroke();
+    text(ctx, String(i + 1), x, y + 1, 16 * u, { display: true, raw: true });
+    const tw = text(ctx, s, x + 24 * u, y, 17 * u, { weight: 700, align: 'left', maxW: pw - 110 * u });
+    if (icon) icon(ctx, x + 24 * u + tw + 22 * u, y, 13 * u);
+    y += 36 * u;
+  });
+  const bw = Math.min(200 * u, pw - 40 * u), bh = 48 * u;
+  app.ui.button(ctx, { id: 'ok', x: W / 2 - bw / 2, y: py + ph - bh - 18 * u, w: bw, h: bh, label: 'COMPRIS', style: 'primary', action: () => act.back() });
 }
 
 // ---------- in play ----------

@@ -14,7 +14,8 @@ import { Run, type RunEvent } from './game/run';
 import { buy, choose, load, store as persistSave, type Store } from './game/save';
 import { clock, install, manual, params } from './hook';
 import { defaultLang, setLang, tr } from './i18n';
-import { exitApp, nativeVibrate, onBack } from './native';
+import { NATIVE, exitApp, nativeVibrate, onBack } from './native';
+import { browserEnv, enterFullscreen, exitFullscreen, fullscreenWay, isFullscreen } from './fullscreen';
 import { Fx } from './render/fx';
 import { Camera, drawWorld, worldScale } from './render/world';
 import { drawScreen } from './screens';
@@ -50,6 +51,7 @@ const app: App = {
   scene: 'title', sceneT: 0, t: 0, save, run: newRun(), fx: new Fx(), cam: new Camera(), ui: new Ui(),
   view: { W: 1, H: 1, dpr: 1, S: 1, u: 1, inset: { l: 0, r: 0, t: 0, b: 0 } },
   shopIdx: 0, summary: null, toasts: [], settingsFrom: 'title', level: null,
+  fullscreen: { way: 'none', on: false },
 };
 let cheers = 0;
 let announced = [false, false, false];
@@ -60,6 +62,7 @@ probe.style.cssText = 'position:fixed;visibility:hidden;pointer-events:none;padd
 document.body.appendChild(probe);
 
 function resize(): void {
+  app.fullscreen = { way: fullscreenWay(browserEnv(NATIVE)), on: isFullscreen() };
   const v = app.view;
   v.dpr = Math.min(window.devicePixelRatio || 1, 2);
   v.W = innerWidth; v.H = innerHeight;
@@ -72,6 +75,8 @@ function resize(): void {
   app.cam.snap(app.run, v);
 }
 addEventListener('resize', resize);
+document.addEventListener('fullscreenchange', resize);
+document.addEventListener('webkitfullscreenchange', resize);
 resize();
 
 // ---------- settings ----------
@@ -196,6 +201,10 @@ const actions: Actions = {
     if (k === 'vibrate') buzz(60);
   },
   replayTutorial() { save.tutorialDone = false; persist(); freshRun(); toast('Le tutoriel rejouera au prochain départ'); },
+  fullscreen() {
+    if (app.fullscreen.way === 'homescreen') goto('homescreen');
+    else if (app.fullscreen.way === 'api') { if (isFullscreen()) exitFullscreen(); else enterFullscreen(); }
+  },
 };
 
 // ---------- the run's events ----------

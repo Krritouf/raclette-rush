@@ -58,6 +58,12 @@ export const EN: Record<string, string> = {
   'Le pré du village': 'The Village Meadow', 'Les barrières': 'The Fences', 'La forêt de sapins': 'The Fir Forest',
   'Les bosses': 'The Bumps', "Les vaches d'Hérens": 'The Hérens Cows', 'La falaise': 'The Cliff', 'Le col': 'The Pass',
   'La grande descente': 'The Long Descent', "L'alpage des reines": 'The Queens\' Pasture', 'Le banquet': 'The Banquet',
+  // full screen
+  'JOUER EN PLEIN ÉCRAN': 'PLAY FULL SCREEN', 'COMPRIS': 'GOT IT',
+  "Sur iPhone, Safari ne permet pas le plein écran : ajoute le jeu à ton écran d’accueil.": "On iPhone, Safari does not allow full screen: add the game to your home screen.",
+  'Touche le bouton Partager de Safari': "Tap Safari's Share button",
+  "Choisis « Sur l’écran d’accueil »": 'Choose “Add to Home Screen”',
+  'Lance Raclette Rush depuis son icône': 'Start Raclette Rush from its icon',
   // the settings
   'Sons': 'Sounds', 'Musique': 'Music', 'Vibrations': 'Vibration', 'Langue': 'Language', 'Revoir le tutoriel': 'Replay the tutorial',
   'Activés': 'On', 'Désactivés': 'Off', 'Activée': 'On', 'Désactivée': 'Off', 'Activées': 'On', 'Désactivées': 'Off',

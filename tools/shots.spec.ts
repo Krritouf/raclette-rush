@@ -99,3 +99,17 @@ for (const [tag, w, h] of [['phone', 844, 390], ['portrait', 390, 844], ['deskto
     await page.screenshot({ path: out(`${tag}-tutorial`) });
   });
 }
+
+test.describe('iPhone', () => {
+  test.use({ userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1' });
+  test('the home-screen help', async ({ page }) => {
+    await page.setViewportSize({ width: 844, height: 390 });
+    await page.addInitScript(() => {
+      for (const k of ['fullscreenEnabled', 'webkitFullscreenEnabled']) Object.defineProperty(Document.prototype, k, { get: () => false });
+    });
+    await open(page, 'tutorial=0&lang=fr');
+    await step(page, 30);
+    await tap(page, 'fullscreen'); await step(page, 30);
+    await page.screenshot({ path: out('iphone-homescreen-help') });
+  });
+});

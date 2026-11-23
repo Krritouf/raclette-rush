@@ -229,11 +229,33 @@ function friendsSheet(cv: HTMLCanvasElement): void {
   label(ctx, 'le cadrage du jeu sur un téléphone en paysage (réduit)', sx + sw / 2, sy + sh + 30, 22, TEXT, '#6b7a8c');
 }
 
+/**
+ * The app icon, size × size: the wheel racing down in front of the mountains. Full bleed (no
+ * rounded corners: iOS and Android cut their own), the wheel inside the middle 80 % so an Android
+ * mask never cuts it.
+ */
+function icon(cv: HTMLCanvasElement, size: number): void {
+  cv.width = size; cv.height = size;
+  const ctx = cv.getContext('2d')!, k = size / 512;
+  ctx.scale(k, k);
+  artSky(ctx, 512, 512, 400, 110);
+  artRange(ctx, 512, 330, 200, '#8ea9c8', 0.42, 3, 60);
+  artRange(ctx, 512, 400, 120, '#5f8f5a', 0, 21, 40);
+  const pts: [number, number][] = [];
+  for (let x = -20; x <= 540; x += 20) pts.push([x, 330 + x * 0.32]);
+  artSlope(ctx, pts, 540, 6);
+  ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 14; ctx.lineCap = 'round';
+  for (const [dy, l] of [[-50, 90], [0, 130], [50, 80]]) { ctx.beginPath(); ctx.moveTo(150, 290 + dy); ctx.lineTo(150 - l, 290 + dy - 18); ctx.stroke(); }
+  at(ctx, 270, 290, 7, () => artWheel(ctx, 'valais', 22, 4, 4, -0.4));
+}
+
 async function main(): Promise<void> {
   await Promise.all([document.fonts.load(`40px 'Lilita One'`), document.fonts.load(`600 20px 'Fredoka'`)]);
   sheet(document.getElementById('sheet') as HTMLCanvasElement);
   scene(document.getElementById('scene') as HTMLCanvasElement);
   friendsSheet(document.getElementById('friends') as HTMLCanvasElement);
+  icon(document.getElementById('icon512') as HTMLCanvasElement, 512);
+  icon(document.getElementById('icon180') as HTMLCanvasElement, 180);
   (window as unknown as { artReady: boolean }).artReady = true;
 }
 void main();
